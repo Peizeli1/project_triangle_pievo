@@ -2,7 +2,6 @@
 \usepackage{iclr2027_conference,times}
 \input{math_commands.tex}
 
-\usepackage{hyperref}
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{graphicx}
@@ -13,13 +12,18 @@
 \usepackage{needspace}
 \usepackage{multirow}
 \usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
 
-\newcommand{\triage}{\textsc{Triage}}
-\newcommand{\method}{\textsc{Triage-PiEvo}}
-\newcommand{\pievo}{\textsc{PiEvo}}
-\newcommand{\revise}{\mathsf{revise}}
-\newcommand{\retain}{\mathsf{retain}}
-\newcommand{\verify}{\mathsf{verify}}
+\providecommand{\pym}[1]{}
+\newcommand{\triage}{\textsc{Triage}\,}
+\newcommand{\method}{\textsc{Triage-PiEvo}\,}
+\newcommand{\pievo}{\textsc{PiEvo}\,}
+\newcommand{\revise}{\mathsf{revise}\,}
+\newcommand{\retain}{\mathsf{retain}\,}
+\newcommand{\verify}{\mathsf{verify}\,}
 
 \title{Triage-PiEvo: Source-Aware Anomaly Diagnosis before Principle Revision}
 
@@ -31,7 +35,7 @@
 \maketitle
 
 \begin{abstract}
-Principle-evolving scientific agents use surprising observations to decide when their current assumptions should be revised. However, surprise is ambiguous: an anomalous residual may reflect a new mechanism, a transient evaluation error, or surrogate misspecification. We introduce \triage{}, an evidence-admission layer that separates anomaly detection from principle revision. \triage{} maintains separate histories for search observations and verification evidence, estimates the reliability of evaluator channels, and keeps each proposed principle provisional until it receives independent held-out support. Contradictory held-out evidence triggers retraction. We instantiate this protocol in \method{}, which combines source-aware triage with an outcome-blind Active Flow Expansion search portfolio. Across four matched discovery tasks and three backbone LLMs, \method{} achieves the highest average SQ and AUOC for every backbone. A Qwen3-235B component study shows that search expansion restores clean-task search quality, whereas the admission gate is critical under corrupted or exploitable feedback. Under controlled evaluator corruption, hidden-source anomalies, and action-dependent proxy exploitation, \triage{} prevents corrupted or non-generalizing evidence from entering the trusted scientific state while preserving valid mechanism updates. Overall, our results show that evidence can guide search before it is sufficiently reliable to justify persistent scientific revision.
+Principle-evolving scientific agents can move beyond incomplete initial hypotheses by revising the principles that guide discovery. Yet a large residual is ambiguous: it may reveal a new mechanism, or arise from evaluator corruption, surrogate mismatch, or a local effect that fails to generalize. We introduce \triage{}, a source-aware evidence-admission layer that separates anomaly detection from authorization to revise persistent scientific state. \triage{} maintains distinct primary and verification histories, updates channel reliability from reconciliation outcomes, and keeps a proposed principle provisional until it receives independent held-out support; contradictory held-out evidence retracts the principle and its descendants. We instantiate this protocol in \method{}, pairing \triage{} with an outcome-blind Active Flow Expansion portfolio for exploitation, frontier expansion, and mechanism-discriminating probes. Across four matched discovery tasks and three backbone LLMs, \method{} achieves the highest average solution quality and area under the optimization curve for each backbone, reaching $79.63$--$83.37$ average solution quality and improving over the strongest baseline for each backbone by $7.5$ to $11.8$ points. A component study separates the two contributions: search expansion recovers clean-task quality, whereas the admission gate is decisive under unreliable feedback. In controlled corruption, hidden-source, reversal, and proxy-exploitation studies, the gate reduces corrupted-evidence admission from $1.0$ to $0.0$, rejects the tested non-generalizing artifacts without missing the tested true mechanism, and enables retraction after reversal. The results show that an observation can be useful for directing search before it is reliable enough to justify persistent principle revision.
 \end{abstract}
 
 \section{Introduction}
@@ -39,56 +43,62 @@ Principle-evolving scientific agents use surprising observations to decide when 
 \begin{wrapfigure}[18]{r}{0.38\textwidth}
     \vspace{-12pt}
     \centering
-    \includegraphics[width=0.88\linewidth]{figures/triage-overview.png}
-    \vspace{-8pt}
+    \includegraphics[width=0.88\linewidth]{figures/triage-overview.pdf}
+    \vspace{-5pt}
     \caption{\textbf{Source-aware triage (schematic).} Latent source $Z_t$ mediates the verified retain-or-revise decision.}
     \label{fig:triage-overview}
-    \vspace{-6pt}
+    \vspace{-12pt}
 \end{wrapfigure}
 
-Autonomous scientific agents increasingly form a closed loop of hypothesis generation, experiment selection, and assumption revision. Principle evolution is useful in this setting because the correct explanation may lie outside the agent's initial hypothesis space. For example, \pievo{} expands its principle space when new observations conflict with the principles currently in use~\citep{pu2026pievo}. Once principles become editable, however, a key question arises: what evidence is sufficient to justify a revision? Figure~\ref{fig:triage-overview} illustrates the source-aware retain-or-revise decision considered in this work.
+% P1 Background: field capability -> task narrowing -> field-level bottleneck.
+Autonomous scientific agents now automate scientific research within a single closed loop~\citep{lu2024aiscientist,yamada2025aiscientistv2workshoplevelautomated,schmidgall2025agentlaboratory,gottweis2025aicoscientist}. 
+On the premise that true knowledge often lies outside the initial hypothesis space, principle-evolution agents~\citep{pu2026pievo, pu2026piflowprincipleawarescientificdiscovery} make every anomaly a decision in this loop: steer hypothesis search, or rewrite the persisted theory and explanation.
 
-A surprising observation may indicate that the current scientific explanation is incomplete, but it may also result from an unreliable evaluation process. Possible causes include measurement noise, execution failures, and local surrogate errors. Residual magnitude alone cannot distinguish these cases. Treating every large residual as evidence of a new mechanism can therefore lead to incorrect principle updates, whereas ignoring anomalies entirely prevents the hypothesis space from evolving when revision is needed.
+% P2 Prior response -> retained constraint -> diagnostic close.
+While surprise-driven revision~\citep{pu2026pievo} lets agents escape their initial hypothesis space, it treats the observation's reliability as given. Consequently, the decision rests on a signal that cannot discriminate---the residual magnitude of surprisal may stem from corrupted measurements or surrogate misspecification; thresholding it therefore trades false revisions against missed theory blindly.
+Nor do existing methods cover this gap: verification loops critique transient responses rather than persisted theory~\citep{shinn2023reflexion,madaan2023selfrefine,gou2023critic,dhuliawala2024chainverification}, and self-correction without external evidence is unreliable~\citep{huang2023cannotselfcorrect,kamoi2024selfcorrection}. 
+Accordingly, community evaluations find that auto-research agents produce extensive artifacts yet seldom revise their internal theory under contradictory evidence~\citep{riosgarcia2026aiscientistsproduceresults,kirgis2026openendedresearch}. 
+This rigidity leads to significant inefficiencies: \emph{anomalies are read as evidence of science, corrupted feedback enters trusted scientific state}.
 
-This distinction can be obscured in an optimization loop because a high-scoring observation may still be useful for guiding search even when its source is unreliable. Scientific revision requires a stronger criterion: the observation must provide sufficient evidence to change the agent's persistent interpretation of the domain. Recent evaluations of automated scientific workflows highlight this problem, showing frequent failures to incorporate contradictory evidence and relatively few cases of refutation-driven belief revision~\citep{riosgarcia2026aiscientistsproduceresults}. We therefore frame the central challenge as evidence admission rather than anomaly detection alone: deciding when an observation is reliable enough to modify the agent's scientific state.
+% P3 Challenge decomposition.
+These limitations reduce to three challenges: (a) one anomaly score has \textbf{source ambiguity} that cannot tell a new mechanism from corrupted or misspecified evaluations; (b) the \textbf{role conflation} of one history serves both search and principle acceptance, so unreliable observations can rewrite trusted principles; and (c) the \textbf{revision irreversibility} that accepted principles cannot be retracted under contradictory evidence.
 
-We introduce \triage{} to make evidence admission explicit. The protocol treats the source of an anomaly as latent and separates evidence used for search from evidence used for principle acceptance. Search observations and verification records are maintained independently, evaluator channels accumulate empirical reliability estimates, and each principle follows a proposed--provisional--accepted--retracted lifecycle. Repeated observations from the same channel can establish sufficient reproducibility for continued search, but principle acceptance requires independent held-out support. Contradictory held-out evidence retracts the principle and any dependent descendants.
+% P4 Method bridge: conceptual reframing and feedback loop, no equations.
+To bridge this gap, we propose \textbf{\triage}, an evidence-admission layer that decouples anomaly detection from principle revision. 
+\triage infers over a latent source variable for each anomaly and routes evidence along two paths with distinct standards: search outcomes accumulate in a primary history that steers candidate selection, while verification records---same-channel repeats, cross-channel checks, held-out probes---are logged separately and update per-channel reliability estimates. A proposed principle is accepted only after independent held-out support; contradictory held-out evidence retracts it and its descendants. An observation can thus remain search-active while its scientific interpretation stays provisional. We instantiate this protocol in \textbf{\method{}}, which pairs \triage{} with an outcome-blind Active Flow Expansion (AFE) portfolio: the portfolio allocates the evaluation budget across exploitation, frontier expansion, and mechanism-discriminating probes, while the gate alone decides which evidence may alter principle state.
 
-Our contributions are threefold:
+% P5 Evidence preview: indexed findings in challenge order.
+We evaluate \method on four discovery tasks under three backbone LLMs.
+Empirical results demonstrate that \textbf{\method}: 
+(a) \textbf{attains the highest performance}, raising average solution quality from \pievo's $62.87$--$70.35$\% to $79.63$--$83.37$\%; 
+(b) \textbf{admits no corrupted observations} where gate-off variants admit every one (admission rate $0.000$ vs.\ $1.000$) under transient and persistent evaluator corruption;
+(c) \textbf{cuts false expansions} on noise, surrogate failure, and non-generalizing local artifacts from $1.0$ to $0.0$ without missing any true mechanism, and backtracks to the correct state after mechanism reversal; and
+(d) \textbf{admits no exploit-region evidence} under proxy exploitation, raising held-out score by $0.209$ at only $+13.6\%$ runtime over \pievo{}.
 
-\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
-    \item We formulate principle revision under anomalous feedback as an evidence-admission problem with asymmetric costs for false revisions and missed mechanisms. We further introduce a latent-source model that separates search observations from verification evidence.
-    
-    \item We implement this formulation through per-channel trust estimation, an explicit proposed--provisional--accepted--retracted principle lifecycle, and an outcome-blind search portfolio. All admission thresholds are fixed before evaluation, and their sensitivity is analyzed using a two-dimensional phase map.
-    
-    \item We separate search quality from epistemic reliability through component analysis and controlled interventions involving evaluator corruption, non-generalizing local artifacts, mechanism reversal, and proxy exploitation. The results show that search expansion and evidence triage provide complementary benefits under different feedback conditions, while clean-task performance is reported with statistical significance bounds.
-\end{itemize}
+In summary, our contributions are:
+\begin{enumerate}[nosep, leftmargin=12pt]
+  \item[(a)] We introduce \textbf{evidence admission} as the decision layer of principle-evolving agents: anomalies are attributed to latent sources, and revision is governed by asymmetric costs of false revision versus missed mechanism, replacing surprise thresholding as the trigger for changing scientific state.
+  \item[(b)] We propose \textbf{\method{}}, which realizes this layer through per-channel trust estimation, a proposed--provisional--accepted--retracted principle lifecycle gated by independent held-out support, and an outcome-blind search portfolio, with all admission thresholds fixed before evaluation.
+  \item[(c)] We provide \textbf{evidence separating search from revision}: across four tasks and three backbones, \method{} raises average discovery quality, and controlled corruption, hidden-source, reversal, and proxy-exploitation studies show that the gate rejects unreliable evidence without rejecting genuine mechanisms.
+\end{enumerate}
 
 \section{Related Work}
 \label{sec:related}
 
-\subsection{Autonomous Scientific Agents and Closed-Loop Discovery}
+\subsection{Autonomous Scientific Agents and Evolving State}
+Scientific agents automate growing shares of the research cycle, from end-to-end paper production and multi-stage pipelines~\citep{lu2024aiscientist,yamada2025aiscientistv2workshoplevelautomated,tang2025airesearcherautonomousscientificinnovation,schmidgall2025agentlaboratory,gottweis2025aicoscientist} to tool-coupled domain execution and closed-loop laboratory discovery~\citep{bran2024chemcrow,boiko2023autonomouschemical,ruan2024llmrdf,yang2024moosechem,ghafarollahi2024sciagents,ding2025scitoolagent,ghareeb2026robin,narayanan2024aviary,laurent2024labbench,mitchener2025bixbench,skarlinski2024paperqa2,mitchener2025kosmos}. What persists between iterations there is an artifact, not a revisable scientific account. A narrower line makes the internal state editable: \pievo{} and PiFlow expand a principle space on conflicting observations~\citep{pu2026pievo,pu2026piflowprincipleawarescientificdiscovery}, ATLAS selects mechanism-discriminating experiments~\citep{elteto2026atlas}, self-revising frameworks log regime changes~\citep{wang2026selfrevising}, and evolving architectures such as EvoMaster~\citep{zhu2026evomaster} and ADMET-EvO~\citep{zhou2026admetevo} pursue cumulative adaptation across tasks, with agentic laboratory world models unifying hypothesis generation and state tracking~\citep{fu2026agenticlab}. Editable state is also corruptible: without explicit evidence admission, anomalous or corrupted feedback rewrites persistent principles directly~\citep{riosgarcia2026aiscientistsproduceresults,kirgis2026openendedresearch}. \triage{} separates the history that steers search from the evidence authorized to alter scientific state.
 
-Recent scientific agents cover increasingly large parts of the research cycle, but they differ in what is carried from one iteration to the next. General-purpose systems such as The AI Scientist, AI Scientist-v2, AI-Researcher, Agent Laboratory, and the AI co-scientist automate combinations of literature review, hypothesis generation, implementation, experimentation, and report writing~\citep{lu2024aiscientist,yamada2025aiscientistv2workshoplevelautomated,tang2025airesearcherautonomousscientificinnovation,schmidgall2025agentlaboratory,gottweis2025aicoscientist}. Domain systems connect language models more tightly to scientific tools and experiments. ChemCrow and Coscientist couple language models with chemistry tools or laboratory execution~\citep{bran2024chemcrow,boiko2023autonomouschemical}; LLM-RDF targets end-to-end reaction development~\citep{ruan2024llmrdf}; MOOSE-Chem and SciAgents organize hypothesis generation around literature or structured scientific knowledge~\citep{yang2024moosechem,ghafarollahi2024sciagents}; and SciToolAgent focuses on multi-tool scientific workflows~\citep{ding2025scitoolagent}. Robin goes further in experimental biology by feeding analyzed laboratory results back into a new round of hypothesis generation~\citep{ghareeb2026robin}. Aviary, LAB-Bench, BixBench, PaperQA2, and Kosmos provide complementary evidence about scientific tool use, research-oriented reasoning, literature synthesis, and longer-horizon autonomous discovery~\citep{narayanan2024aviary,laurent2024labbench,mitchener2025bixbench,skarlinski2024paperqa2,mitchener2025kosmos}.
+\subsection{Active Experimentation under Heterogeneous Sources}
+In active learning and Bayesian optimization, one line decides where to spend evaluations~\citep{mackay1992information,houlsby2011bayesianactivelearningclassification}, constraining exploration for safety~\citep{sui2015safeopt} or scalability~\citep{eriksson2019turbo}. Another exploits heterogeneous costs, fidelities, and failure rates across sources~\citep{swersky2013multitask,kandasamy2017multifidelitybayesianoptimisationcontinuous,poloczek2017multiinformation,ghoreishi2018multinformation}, extending to unreliable channels~\citep{mikkola2023multifidelity,fan2024inputdependentmfbo}, quality-controlled loops~\citep{harris2025activeoversightqualitycontrol}, and out-of-distribution expansion~\citep{desanti2026actflow}. Both decide which observation to acquire \emph{before} it is run, so an anomalous outcome inherits whatever reliability the acquisition rule assumed. The difference is in what the decision protects: multi-source methods weight a noisy source inside a regression model, while the object at risk here is a persistent principle that a single admitted artifact can corrupt for the rest of the run. Our AFE portfolio takes the acquisition-side view for candidate generation; \triage{} makes the post-observation decision of whether an anomaly may update that principle.
 
-A narrower line of work makes the scientific state itself editable. \pievo{} expands its principle space when observations conflict with the principles currently in use, and PiFlow introduces multi-agent collaboration around this principle-aware search process~\citep{pu2026pievo,pu2026piflowprincipleawarescientificdiscovery}. ATLAS instead chooses experiments that discriminate between competing mechanistic models~\citep{elteto2026atlas}, while self-revising discovery frameworks make regime changes and their verification explicit in the agent state~\citep{wang2026selfrevising}. These systems make revision possible, but revision also creates a failure mode that ordinary search agents do not face: a bad measurement or an exploitable evaluator can become part of the agent's persistent scientific account. Recent evaluations make this distinction concrete; agents can produce substantial research artifacts while still handling contradictory evidence and backtracking poorly~\citep{riosgarcia2026aiscientistsproduceresults,kirgis2026openendedresearch}. The question addressed here is therefore not how to generate another hypothesis, but when an observation has earned the right to change the scientific state.
-
-\subsection{Active Experimentation and Expanding Search Spaces}
-
-The search side of autonomous discovery is closely related to active learning and Bayesian optimization. Information-based data selection has a long history~\citep{mackay1992information,houlsby2011bayesianactivelearningclassification}, while modern Bayesian optimization formalizes sequential experimentation when evaluations are expensive~\citep{snoek2012practical,shahriari2016bayesopt,frazier2018tutorial}. Predictive- and max-value entropy search choose evaluations for their expected information about the optimum~\citep{hernandezlobato2014pes,wang2017mes}; SafeOpt constrains exploration to a safe region~\citep{sui2015safeopt}; and TuRBO uses local trust regions to remain effective in difficult search spaces~\citep{eriksson2019turbo}. These methods are useful precedents for deciding where an autonomous scientist should spend its next evaluation.
-
-Scientific workflows also contain sources with different costs, fidelities, and failure rates. Multi-task, multi-fidelity, and multi-information-source Bayesian optimization exploit these differences rather than treating every observation as interchangeable~\citep{swersky2013multitask,kandasamy2017multifidelitybayesianoptimisationcontinuous,poloczek2017multiinformation,ghoreishi2018multinformation}. More recent work explicitly allows information sources to be unreliable or input-dependent~\citep{mikkola2023multifidelity,fan2024inputdependentmfbo}, and active oversight incorporates experimental quality control into an autonomous optimization loop~\citep{harris2025activeoversightqualitycontrol}. Active Flow Expansion addresses a related exploration problem by pushing generative search toward informative out-of-distribution regions~\citep{desanti2026actflow}. Our AFE portfolio draws on this search perspective. \triage{}, however, acts after an outcome is observed: its decision is whether that evidence may update a persistent principle. Choosing an informative experiment and authorizing a scientific revision are different decisions, and conflating them is precisely what makes anomalous feedback dangerous.
-
-\subsection{Evidence Reliability, Verification, and Scientific Revision}
-
-A large residual need not imply a new mechanism. Classical model calibration separates parameter uncertainty, observation noise, and simulator discrepancy~\citep{kennedy2001bayesiancalibration}, while Bayesian anomaly models treat unusual measurements probabilistically rather than as direct evidence of a changed process~\citep{roberts2019bayesiananomaly}. In predictive models, calibration, Bayesian approximations, deep ensembles, and evaluations under dataset shift all show that confidence can degrade when the data-generating process changes~\citep{guo2017calibration,gal2016dropout,lakshminarayanan2017deepensembles,ovadia2019uncertaintyshift}. Conformal prediction offers distribution-free uncertainty control~\citep{angelopoulos2022gentleintroductionconformalprediction}; conformalized quantile regression and adaptive conformal inference extend this idea to heteroscedasticity and distribution shift~\citep{romano2019conformalizedquantile,gibbs2021adaptiveconformal}; and LOCBO brings localized conformal guarantees into misspecified Bayesian optimization~\citep{kim2025robustbayesianoptimizationlocalized}. At the experimental layer, anomaly detection in automated laboratories likewise treats measurement failures as a separate object of inference~\citep{gusev2025hplcanomalydetection}.
-
-Verification has also become a recurring component of language-model agents. ReAct interleaves reasoning with external actions~\citep{yao2023reactsynergizingreasoningacting}; Reflexion and Self-Refine reuse feedback to revise subsequent behavior or outputs~\citep{shinn2023reflexion,madaan2023selfrefine}; CRITIC uses tools to check and correct model responses~\citep{gou2023critic}; and Chain-of-Verification separates a draft from independently answered verification questions~\citep{dhuliawala2024chainverification}. At the same time, self-correction without reliable external evidence is inconsistent and can even degrade correct answers~\citep{huang2023cannotselfcorrect,kamoi2024selfcorrection}. GLEAN makes evidence accumulation and additional verification explicit for high-stakes agent decisions~\citep{zhang2026glean}. \triage{} adopts the same general lesson---verification must have provenance---but applies it to a different object: persistent scientific principles. Repetition can justify keeping an observation active for search, whereas principle acceptance requires independent held-out support; later contradictory held-out evidence can retract the accepted principle and its descendants.
+\subsection{Verification, Provenance, and Agent Monitoring}
+In agent systems, verification targets transient outputs through feedback recycling~\citep{yao2023reactsynergizingreasoningacting,shinn2023reflexion,madaan2023selfrefine}, tool-based checking~\citep{gou2023critic}, independent verification questions~\citep{dhuliawala2024chainverification}, and evidence accumulation~\citep{zhang2026glean}, though self-correction without external evidence is unreliable~\citep{huang2023cannotselfcorrect,kamoi2024selfcorrection}. Related work argues for monitoring agentic systems before trusting them~\citep{boston2026monitoring} and for immutable provenance trails over agent-generated artifacts~\citep{liu2026lasthuman}, while Sibyl~\citep{rangelov2026sibyl} uses temporal backtesting as held-out evidence. \triage{} carries these provenance and monitoring ideas to persistent principles: same-source agreement keeps observations search-active, acceptance requires independent held-out support, and contradictory held-out evidence forces retraction.
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig_method_overview.pdf}
-    \caption{\textbf{Overview of the \method{} Framework.} The architecture unifies exploratory candidate generation with evidence-aware principle revision in a structured discovery space. \textit{Left (Outcome-Blind Search Portfolio):} Candidate proposals $X_t$ cycle across exploitation, frontier expansion, and mechanism-discriminating probes guided by active principles $\mathcal{P}_t$. \textit{Middle (Source-Aware \triage{}):} Anomalous residuals trigger diagnostic attribution over latent observation sources $Z_t \in \mathcal{Z}$ (e.g., execution faults, out-of-distribution inputs, noise, drift, or genuine mechanisms). Targeted verification actions (repetition, recalibration, high-fidelity evaluations, local probes) inform an evidence gate that either quarantines the anomaly, admits the observation to search history, or authorizes principle revision. \textit{Right (Principle Lifecycle):} Proposed principles undergo staged evaluation (\textsc{Proposed} $\to$ \textsc{Provisional} $\to$ \textsc{Accepted}) requiring held-out confirmation, while contradictory evidence triggers immediate retraction.}
+    \vspace{-0.6cm}
+    \caption{\textbf{Overview of \method{}.} \textit{Left:} an outcome-blind AFE portfolio cycles candidate proposals $X_t$ across exploitation, frontier expansion, and mechanism-discriminating probes. \textit{Middle:} \triage{} attributes each anomalous residual to a latent source $Z_t$ and routes the observation to quarantine, search history, or principle revision. \textit{Right:} principles advance \textsc{Proposed} $\to$ \textsc{Provisional} $\to$ \textsc{Accepted} only with independent held-out support; contradictory evidence retracts them.}
     \label{fig:method-overview}
 \end{figure*}
 
@@ -97,165 +107,92 @@ Verification has also become a recurring component of language-model agents. ReA
 
 \subsection{Overview}
 
-\triage{} changes one interface in a principle-evolving agent: the path from an anomalous observation to a persistent principle update. A high-surprisal outcome first opens a diagnostic state. The controller may repeat the evaluation, consult another channel, or request a held-out probe; only after this evidence is reconciled can the observation influence principle status.
+\triage{} changes one interface in a principle-evolving agent: the path from an anomalous observation to a persistent principle update. A high-surprisal outcome opens a diagnostic state, in which the controller may repeat the evaluation, consult another channel, or request a held-out probe; only reconciled evidence can affect principle status.
 
-The implementation maintains two linked histories. A primary record stores the candidate, prediction, observed outcome, source channel, and available metadata. Verification records store repeated, independent, or held-out outcomes together with their cost and a pointer to the primary observation. Keeping these histories separate prevents a verification result from silently becoming another search observation and makes the provenance of each principle update explicit.
+Two linked histories support this. A primary record stores the candidate, prediction, outcome, source channel, and metadata. A verification record stores a repeated, cross-channel, or held-out outcome with its cost and a pointer to the primary observation. Separating them keeps a verification result from silently re-entering search as a new observation, and makes the provenance of each principle update explicit. We write \triage{} for this admission protocol and \method{} for the integrated system of §\ref{sec:experiments}, which adds an outcome-blind Active Flow Expansion (AFE) portfolio. AFE decides where to search; \triage{} decides what may change a principle, so search stays exploratory without granting every promising observation the same epistemic standing (Figure~\ref{fig:method-overview}).
 
-We use \triage{} for this evidence-admission protocol and \method{} for the integrated system evaluated in Section~\ref{sec:experiments}. \method{} also includes an outcome-blind Active Flow Expansion (AFE) portfolio for candidate generation. The two components address different decisions: AFE determines where to search, whereas \triage{} determines what evidence is allowed to change a principle. This separation lets the search policy remain exploratory without granting every promising observation the same epistemic status. Figure~\ref{fig:method-overview} illustrates the overall architecture.
+\subsection{Revision under Source Ambiguity}
 
-\subsection{Source-Aware Revision Model}
+At step $t$, the agent evaluates a candidate $x_t$ under principle state $\mathcal{P}_t$, obtaining outcome $y_t$ with metadata $m_t$ available before verification (batch identity, execution status, surrogate uncertainty); $h_t$ is the history of primary observations and actions, and the anomaly score $s_t$ summarizes the gap between $y_t$ and the prediction implied by $\mathcal{P}_t$.
 
-At step $t$, the agent evaluates a candidate $x_t$ under its current principle state $\mathcal{P}_t$. Let $h_t$ denote the history of primary observations and actions, $y_t$ the observed outcome, and $m_t$ the metadata available before verification. The metadata may include device state, support diagnostics, batch identity, execution status, or surrogate uncertainty. An anomaly score $s_t$ summarizes the discrepancy between $y_t$ and the prediction implied by $\mathcal{P}_t$.
-
-We represent the ambiguity behind this discrepancy with a latent source variable
+We represent the ambiguity behind this discrepancy with a latent source variable:
 \begin{equation}
-  \begin{aligned}
-  Z_t \in \mathcal{Z} = \{&\text{noise},\text{device fault},\text{execution failure},
-  \text{surrogate mismatch},\\
-  &\text{OOD input},\text{environment drift},\text{new mechanism}\}.
-  \end{aligned}
+\begin{split}
+  Z_t \in \mathcal{Z} = \{ &\text{noise},\ \text{device fault},\ \text{execution failure},\ \text{surrogate mismatch},\\
+  &\text{OOD input},\ \text{drift},\ \text{new mechanism}\}.
+\end{split}
   \label{eq:sources}
 \end{equation}
-The source is not observed, and the same anomaly score can be compatible with several elements of $\mathcal{Z}$. Conceptually, the agent maintains a posterior
+The true source is unobserved, and the same anomaly score can arise from several elements of $\mathcal{Z}$. A decision-theoretic account of this ambiguity starts from a posterior over sources,
 \begin{equation}
- q_t(z) = p\!\left(z \mid h_t,y_t,m_t,\mathcal{P}_t\right)
- \propto p\!\left(y_t \mid x_t,z,m_t,\mathcal{P}_t\right)
- p\!\left(z \mid h_t,m_t,\mathcal{P}_t\right).
+ q_t(z) = p(z \mid h_t,y_t,m_t,\mathcal{P}_t) \propto p(y_t \mid x_t,z,m_t,\mathcal{P}_t) p(z \mid h_t,m_t,\mathcal{P}_t).
  \label{eq:posterior}
 \end{equation}
-This posterior is a decision model rather than a requirement that the runtime identify the exact physical source. In practice, targeted verification provides evidence that shifts support among source explanations and, more importantly, changes whether revision is warranted.
-
-Let $a_t\in\mathcal{A}$ be a verification action and $v_t^a$ its outcome. A source-aware controller may use
+Let $a_t\in\mathcal{A}=\{\text{repeat},\text{recalibrate},\text{high-fidelity},\text{local probe}\}$ denote verification actions with cost $C(a)$. Deciding between revision and retention involves asymmetric errors:
 \begin{equation}
- \mathcal{A}=\{\text{repeat},\text{recalibrate},\text{high-fidelity},\text{local probe}\}.
- \label{eq:actions}
-\end{equation}
-Each action has a cost $C(a)$ and a source-dependent observation model $p(v_t^a\mid z,a,m_t)$. After observing $v_t^a$, the posterior is updated by Bayes' rule and the controller chooses either to retain the current principle state or propose a revision.
-
-The decision must account for two asymmetric errors. Let $d\in\{\revise,\retain\}$ and define
-\begin{equation}
- L(d,z)=\ell_{\mathrm{FR}}\mathbb{1}[d=\revise,z\neq z_{\mathrm{mech}}]
- +\ell_{\mathrm{FM}}\mathbb{1}[d=\retain,z=z_{\mathrm{mech}}],
+ L(d,z)=\ell_{\mathrm{FR}}\mathbb{1}[d=\revise,z\neq z_{\mathrm{mech}}] + \ell_{\mathrm{FM}}\mathbb{1}[d=\retain,z=z_{\mathrm{mech}}],
  \label{eq:loss}
 \end{equation}
-where $\ell_{\mathrm{FR}}$ is the cost of a false principle revision and $\ell_{\mathrm{FM}}$ is the cost of missing a real mechanism. The current Bayes risk is
+where $\ell_{\mathrm{FR}} \gg \ell_{\mathrm{FM}}$ penalizes corrupting persistent scientific principles much more heavily than missing a transient mechanism. The corresponding Bayes risk is $\mathcal{R}_t=\min_d\mathbb{E}_{q_t}[L(d,Z_t)]$, yielding the value-of-verification:
 \begin{equation}
- \mathcal{R}_t=\min_d\mathbb{E}_{q_t}[L(d,Z_t)].
- \label{eq:risk}
-\end{equation}
-The value of a verification action is the expected reduction in this risk after observing its result, minus its cost and residual false-revision risk:
-\begin{equation}
- \begin{split}
- V_t(a) ={}& \mathcal{R}_t-
- \mathbb{E}_{v\sim p(v\mid\mathcal{D}_t,a)}[\mathcal{R}_{t+1}(a,v)]\\
- &-\lambda_c C(a)-\lambda_f Q_{t+1}^{\mathrm{FR}}(a),
- \end{split}
+ V_t(a) = \mathcal{R}_t - \mathbb{E}_{v\sim p(v\mid\mathcal{D}_t,a)}[\mathcal{R}_{t+1}(a,v)] - \lambda_c C(a) - \lambda_f Q_{t+1}^{\mathrm{FR}}(a).
  \label{eq:utility}
 \end{equation}
-where $\mathcal{D}_t=(h_t,y_t,m_t,\mathcal{P}_t)$ and $Q_{t+1}^{\mathrm{FR}}$ is the posterior probability of revising when the source is not a new mechanism. The ideal action is $a_t^*=\arg\max_a V_t(a)$ among actions within budget.
-
-For each evaluator channel $c$, the controller maintains a reliability posterior:
-\begin{equation}
- r_c\sim\operatorname{Beta}(\alpha_c,\beta_c),\qquad
- p_c^{\mathrm{trust}}=\frac{\alpha_c}{\alpha_c+\beta_c}.
- \label{eq:channel-trust}
-\end{equation}
-Both masses are initialized to one. Agreement increments $\alpha_c$, whereas disagreement increments $\beta_c$. The trust estimate is not itself a source label; it controls how much corroboration is required from a channel whose observations have previously disagreed with verification. Equation~\ref{eq:utility} motivates the verification decision, while the implementation uses same-source reconciliation, independent checks, and held-out probes as a lightweight realization of this principle.
+\paragraph{From Reference Model to Runtime Protocol.}
+Equations~(\ref{eq:sources})--(\ref{eq:utility}) state what a correct revision decision requires; they are not executed at runtime. Estimating $q_t(z)$ needs a per-source likelihood $p(y_t\mid x_t,z,m_t,\mathcal{P}_t)$ that these settings do not provide: the evaluator is a black box and source labels are never observed. The design question is thus not how to recover $Z_t$, but how to decide correctly without recovering it. We take three properties from the reference model and realize each with an observable quantity:
+\begin{enumerate}[nosep, leftmargin=12pt]
+  \item \textbf{Ambiguity triggers verification, not revision.} Where the reference model acts on posterior mass spread across $\mathcal{Z}$, the runtime opens a diagnostic state whenever $s_t > \tau_{\mathrm{anom}} = 0.85$. Verification stays conditional, so cost is paid only on anomalies ($2.8$ extra calls per run)---the role of $\lambda_c C(a)$ in Equation~(\ref{eq:utility}).
+  \item \textbf{Verification actions are ordered by discriminative power.} Instead of maximizing $V_t(a)$ online, actions escalate along a fixed order---same-channel repeat, cross-channel check, held-out probe---stopping once the evidence is decisive. That order is the standing ranking of $V_t(a)$ under Equation~(\ref{eq:loss}): repeats separate transient noise from persistent effects, cross-channel checks separate channel faults from signal, and only held-out probes separate an artifact from a mechanism.
+  \item \textbf{The gate is asymmetric because the losses are.} With $\ell_{\mathrm{FR}} \gg \ell_{\mathrm{FM}}$, the two paths carry different burdens of proof. Same-channel agreement ($|y_t - v_t| \le \epsilon_{\mathrm{rep}} = 0.12$) admits an observation to search but never authorizes revision; revision also needs agreement with a distinct channel $c' = \arg\max_{c'' \neq c} p_{c''}^{\mathrm{trust}}$ ($|v_t^c - v_t^{c'}| \le \epsilon_{\mathrm{ind}} = 0.12$) and $k$ independent held-out records.
+\end{enumerate}
+The controller tracks per-channel reliability with a Beta posterior $r_c \sim \operatorname{Beta}(\alpha_c,\beta_c)$, $p_c^{\mathrm{trust}} = \alpha_c/(\alpha_c+\beta_c)$, incrementing $\alpha_c$ on agreement and $\beta_c$ on disagreement. Trust governs which channels are eligible to verify and flags degraded ones, but it never relaxes the standard of proof: $k$, $\tau_{\mathrm{gen}}$, and the tolerances are fixed a priori, so no channel earns the right to bypass held-out corroboration however reliable its history.
 
 \subsection{Outcome-Blind Search Portfolio}
 
-\method{} retains \pievo{}'s information-directed selector and broadens candidate proposals with three outcome-blind roles: best-region exploitation, frontier expansion, and a mechanism-discriminating probe. The design follows the active-expansion principle of seeking informative frontier regions under verifier uncertainty~\citep{desanti2026actflow}, adapted here from generative-model expansion to task-level candidate proposal. The roles cycle before the next outcome is observed. The role score combines local reward $\hat{\mu}$, uncertainty $\hat{\sigma}$, distance from previously tested candidates $N$, and descriptor novelty $D$. The weights emphasize local reward for exploitation and novelty for the probe. Candidate proposals can come from task-valid structural streams, mutations, expansions, or model generation. Verifier outcomes, gate decisions, and hidden labels are excluded from the proposal rule. Figure~\ref{fig:afe-manifold} visualizes how the three roles occupy complementary regions of a schematic portfolio landscape.
+\method{} broadens candidate proposals across three structured roles: best-region exploitation, frontier expansion, and mechanism-discriminating probes~\citep{desanti2026actflow}. 
 
-\begin{wrapfigure}[18]{r}{0.46\textwidth}
+\begin{wrapfigure}[18]{r}{0.45\textwidth}
     \vspace{-12pt}
     \centering
     \includegraphics[width=\linewidth]{figures/fig_afe_manifold.pdf}
     \vspace{-6pt}
-    \caption{\textbf{AFE portfolio (schematic).} Exploitation, expansion, and probe proposals occupy complementary regions.}
+    \caption{\textbf{AFE portfolio (schematic).} Complementary candidate roles.}
     \label{fig:afe-manifold}
     \vspace{-6pt}
 \end{wrapfigure}
 
-Triage acts only after the candidate has been evaluated. If no verification evidence is available, the observation remains quarantined. Agreement admits the primary value to search; disagreement deactivates that value and substitutes the median verification outcome. Multiple mutually consistent verification outcomes can also support admission when their median exceeds the current prediction by a fixed margin. This controls what enters search history and remains separate from the stronger decision to accept a scientific principle. In this way, AFE may remain exploratory while the evidence-admission layer imposes a separate standard on observations that can influence persistent scientific state.
-
-Once role $r$ is fixed, candidate $x$ is ranked by
+\paragraph{Outcome-Blind Specification.}
+``Outcome-blind'' means the proposal policy is \emph{gate-blind} and \emph{verifier-blind}: generators cycle deterministically through the roles with no access to verifier channels, latent sources $Z_t$, or gate states, so a quarantine or retraction cannot steer the next proposal. Surrogate reward $\hat{\mu}(x)$ and uncertainty $\hat{\sigma}(x)$ are refit each round from admitted primary observations only---quarantined records are excluded until reconciled---so a corrupted outcome cannot influence scoring through the surrogate either. For role $r$,
 \begin{equation}
- A_r(x)=w_r^{\mu}\hat{\mu}(x)+w_r^{\sigma}\hat{\sigma}(x)
- +w_r^{n}N(x)+w_r^{d}D(x),
+ A_r(x)=w_r^{\mu}\hat{\mu}(x)+w_r^{\sigma}\hat{\sigma}(x) + w_r^{n}N(x)+w_r^{d}D(x),
  \label{eq:afe}
 \end{equation}
+where $N(x)$ is distance from evaluated inputs and $D(x)$ descriptor novelty; role weights are fixed a priori (Appendix~\ref{app:hyperparams}) and Figure~\ref{fig:afe-manifold} shows the resulting geometry. \triage{} acts only after evaluation: agreement admits an observation to search, disagreement substitutes the verified median.
 
 \subsection{Coherent Augmentation for Principles}
 
-Each candidate principle stores a parent pointer, supporting and contradicting evidence, and one of four states: proposed, provisional, accepted, or retracted. The first supporting record moves a proposal to provisional. Let $E(P)$ denote its supporting records. We accept a provisional principle only when
+Each candidate principle stores a parent pointer, supporting/contradicting records, and a lifecycle state: $\textsc{Proposed} \to \textsc{Provisional} \to \textsc{Accepted}$ (or $\textsc{Retracted}$). The first supporting record makes a proposal provisional. A provisional principle is accepted if and only if
 \begin{equation}
  P:\mathrm{provisional}\rightarrow\mathrm{accepted}
  \quad\Longleftrightarrow\quad
- \left|\{e\in E(P):e.\mathrm{independent}\wedge e.\mathrm{heldout}\}\right|\geq k,
+ \left|\{e\in E(P):e.\mathrm{ind}\wedge e.\mathrm{heldout}\wedge \mathrm{support}(e,P)\}\right|\geq k,
  \label{eq:gate}
 \end{equation}
-with $k=2$ in our implementation. A contradicting held-out record retracts the principle and recursively retracts its descendants. Same-source reproducibility can therefore keep an observation available to search while its scientific interpretation remains provisional.
-
-\paragraph{\pievo{} integration.}
-
-We place this lifecycle between \pievo{}'s anomaly handler and its accepted principle state. \pievo{} can still use a surprising observation to propose an augmentation~\citep{pu2026pievo}; \triage{} controls whether that proposal remains provisional or acquires the independent support required by Equation~\ref{eq:gate}. Search and verification records stay separate, and gate decisions and principle transitions are recorded in the audit log. This preserves \pievo{}'s mechanism for proposing new principles while changing the evidence required to authorize them.
-
+with $k=2$. Writing $\Delta_{\mathrm{heldout}}(e;P)$ for the held-out gain of $P$ measured by $e$, the three predicates are: $e.\mathrm{ind}$, the record comes from an evaluator process sharing no memory, cache, or random seed with the primary evaluator---a declared channel identity checked before the record counts, asserted at the process level rather than tested statistically; $e.\mathrm{heldout}$, the record is evaluated on a partition $X_{\mathrm{heldout}}$ with $X_{\mathrm{heldout}} \cap X_{\mathrm{train}} = \emptyset$, fixed before the run and hidden from the generator; and stance, $\mathrm{support}(e,P) = \mathbb{1}[\Delta_{\mathrm{heldout}}(e;P) \ge \tau_{\mathrm{gen}}]$ and $\mathrm{contradict}(e,P) = \mathbb{1}[\Delta_{\mathrm{heldout}}(e;P) \le -\tau_{\mathrm{gen}}]$ with $\tau_{\mathrm{gen}}=0.16$, leaving records inside the band uninformative. The symmetric margin is what separates an artifact from a mechanism: an artifact reproduces under repetition yet gives $\Delta_{\mathrm{heldout}} < \tau_{\mathrm{gen}}$, so it never reaches the count in Equation~(\ref{eq:gate}). Any record with $\mathrm{contradict}(e,P)=1$ retracts $P$ and, recursively, every principle listing $P$ as a parent. Pseudocode is in Appendix~\ref{app:pseudocode}.
 
 \section{Experiments}
 \label{sec:experiments}
 
-We evaluate the decision layer at three levels. First, we measure downstream discovery quality on \pievo{}'s four-task benchmark with 24 primary evaluations per run. Second, a Qwen3-235B component study isolates source-aware triage from the AFE search portfolio. Third, controlled interventions test evaluator corruption, hidden anomaly sources, non-generalizing local artifacts, mechanism reversal, and proxy exploitation. The interventions directly cover measurement noise, surrogate mismatch, local artifacts, and mechanism reversal. The hidden-source benchmark also includes a synthetic baseline-drift condition, which is narrower than general environment drift. OOD inputs, broad environment drift, execution failures, and physical device faults remain outside the direct intervention scope.
+We evaluate \method{} across three complementary dimensions: (1) downstream optimization performance across four scientific discovery tasks under three backbone LLMs; (2) component ablations isolating search expansion from evidence admission; and (3) controlled stress tests targeting evaluator corruption, hidden anomaly sources, mechanism reversal, proxy exploitation, and cross-harness deployment.
 
 \subsection{Experiment Setup}
 \label{sec:matched}
 
-\paragraph{Tasks and Benchmarks.} The evaluation uses four standard discovery benchmarks: Molecular Bio-activity Optimization (MBO), Nanomaterial Optical Property Optimization (NHO), Superconductor Optimization (SPO), and Transition Metal Complex Optimization (TMC). Each task uses the released evaluator with a budget of 24 primary evaluations.
+\paragraph{Tasks and Baselines.} We use four discovery environments from \pievo{}~\citep{pu2026pievo}: Molecular Bio-activity Optimization (MBO), Nanomaterial Optical Property Optimization (NHO), Superconductor Optimization (SPO), and Transition Metal Complex Optimization (TMC), against seven baselines: Vanilla MAS, ReAct~\citep{yao2023reactsynergizingreasoningacting}, AI Scientist v1~\citep{lu2024aiscientist}, AI Scientist v2~\citep{yamada2025aiscientistv2workshoplevelautomated}, AI Researcher~\citep{tang2025airesearcherautonomousscientificinnovation}, PiFlow~\citep{pu2026piflowprincipleawarescientificdiscovery}, and \pievo{}~\citep{pu2026pievo}.
 
-\paragraph{Baselines.} We compare \method{} with seven baselines: Vanilla MAS, ReAct~\citep{yao2023reactsynergizingreasoningacting}, AI Scientist v1~\citep{lu2024aiscientist}, AI Scientist v2~\citep{yamada2025aiscientistv2workshoplevelautomated}, AI Researcher~\citep{tang2025airesearcherautonomousscientificinnovation}, PiFlow~\citep{pu2026piflowprincipleawarescientificdiscovery}, and \pievo{}. All methods use the same task prompts, evaluator interface, and primary-evaluation budget.
+\paragraph{Implementation Details.} We evaluate three backbones---Qwen3-235B, Gemini-2.5-Flash-Lite, GPT-5.6-Luna---in direct execution mode without extended chain-of-thought, over three fixed seeds (0, 1, 2) at a budget of 24 primary evaluations: 96 runs per model, 288 trajectories. Gate parameters are fixed a priori across all tasks and backbones: $\tau_{\mathrm{anom}}=0.85$, $\epsilon_{\mathrm{rep}}=\epsilon_{\mathrm{ind}}=0.12$, $\tau_{\mathrm{gen}}=0.16$, $k=2$ (full specification and sensitivity sweeps in Appendix~\ref{app:hyperparams}). 
 
-\paragraph{Implementation details.} The evaluation covers three backbone LLMs: GPT-5.6-Luna (no thinking), Qwen3-235B, and Gemini-2.5-Flash-Lite (no thinking). Each cell uses three fixed seeds (0, 1, and 2) with 24 primary evaluations per task--method--seed cell, totaling 96 cells per model. All methods operate under an identical primary-search budget of 24 evaluations per cell, and all reported metrics are computed exclusively from these primary evaluations. Boldface identifies the best entry in each per-task column and the Average column within each backbone block.
-
-\paragraph{Hyperparameters.} Table~\ref{tab:hyperparams} lists the five gate constants used throughout. All five are fixed before any experiment and are not tuned per task or backbone.
-
-\begin{table}[!ht]
-\caption{Evidence-admission gate hyperparameters. All values are fixed across all experiments.}
-\label{tab:hyperparams}
-\centering
-\small
-\begin{tabular}{llc}
-\toprule
-Constant & Role & Value \\
-\midrule
-$\tau_{\mathrm{anom}}$ & Residual threshold to open diagnostic state & 0.85 \\
-$\epsilon_{\mathrm{rep}}$ & Same-channel agreement tolerance & 0.12 \\
-$\epsilon_{\mathrm{ind}}$ & Cross-channel agreement tolerance & 0.12 \\
-$\tau_{\mathrm{gen}}$ & Held-out gain required to authorize a revision & 0.16 \\
-$k$ & Independent held-out records required for acceptance & 2 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\paragraph{Sensitivity analysis.} Figure~\ref{fig:gate-sensitivity} varies the two decision thresholds that most directly control admission and diagnostic coverage. The 2D phase map exposes the boundary as a function of the held-out gain threshold and probe attenuation: at the default $\tau_{\mathrm{gen}}=0.16$, a true mechanism is missed only after the held-out probe is attenuated above ${\sim}80\%$. The anomaly-threshold sweep shows the complementary coverage trade-off and places the default $\tau_{\mathrm{anom}}=0.85$ on the zero-miss plateau.
-
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=\linewidth]{figures/fig_gate_sensitivity.pdf}
-    \caption{\textbf{Gate sensitivity analysis.} (a) Missed-mechanism rate as a joint function of the held-out gain threshold $\tau_{\mathrm{gen}}$ and held-out probe attenuation. The default operating point (circle) lies in the zero-error region, and the boundary moves monotonically with the effective held-out gain. (b) Verification cost and missed-mechanism rate as a function of the anomaly threshold $\tau_{\mathrm{anom}}$; the default (dashed) lies on the flat zero-miss plateau before coverage collapses at more restrictive thresholds.}
-    \label{fig:gate-sensitivity}
-\end{figure}
-
-\paragraph{Metrics.} \textbf{Solution Quality} (SQ, $\uparrow$) normalises the best observed evaluator output against a task reference $\mu_{\mathrm{ref}}$:
-\begin{equation}
-  \mathrm{SQ} = \frac{\max_{t} y_t}{\mu_{\mathrm{ref}}} \times 100,
-  \label{eq:sq}
-\end{equation}
-where $\mu_{\mathrm{ref}} \in \{2.0,\ 6.5,\ 298.5,\ 493.8\}$ for NHO, MBO, SPO, TMC respectively.
-\textbf{Area Under the Optimisation Curve} (AUOC, $\uparrow$) replaces the final best with the running best averaged over the trajectory:
-\begin{equation}
-  \mathrm{AUOC} = \frac{1}{T}\sum_{t=1}^{T}\frac{\max_{\tau\leq t} y_\tau}{\mu_{\mathrm{ref}}} \times 100.
-  \label{eq:auoc}
-\end{equation}
-\textbf{Average Pairwise Distance} (APD, $\uparrow$) measures hypothesis diversity as the mean $\ell_2$ distance between normalised Qwen3-Embedding-0.6B embeddings of the $T$ evaluated inputs. Per-task entries are mean $\pm$ standard deviation across seeds, and the Average columns follow the four-task averaging convention.
+\paragraph{Evaluation Metrics.} With $y_{1:T}$ the primary outcomes of a run: (1)~\textbf{Solution Quality} (SQ, \%, $\uparrow$) is $100\cdot\max_t y_t/\mu_{\mathrm{ref}}$; (2)~\textbf{AUOC} (\%, $\uparrow$) is $100\cdot\frac{1}{T}\sum_{t}\max_{t'\leq t} y_{t'}/\mu_{\mathrm{ref}}$, crediting how early quality is reached; (3)~\textbf{APD} ($\uparrow$) is mean pairwise cosine distance between proposed candidates under Qwen3-Embedding-0.6B. References are $\mu_{\mathrm{ref}}=6.5$ (MBO), $2.0$ (NHO), $298.5$ (SPO), $493.8$ (TMC), from \pievo{}~\citep{pu2026pievo}. These are published reference values, not attainable upper bounds, so SQ passes $100$ when a run beats the reference; we apply no clipping.
 
 \begin{table*}[!ht]
 \caption{Solution Quality (SQ, \%) across four discovery tasks and three backbone LLMs. Entries report mean $\pm$ SD over three seeds; averages are computed across tasks. Bold indicates the best result within each backbone.}
@@ -304,12 +241,29 @@ PiFlow & 128.77 \textcolor{gray}{\scriptsize $\pm$ 18.74} \textcolor{purple}{\sc
 }
 \end{table*}
 
+\subsection{Matched Downstream Performance}
+\label{sec:performance}
+
+Table~\ref{tab:main-sq} reports terminal Solution Quality. \method{} reaches the highest average SQ for each backbone---$82.10$, $79.63$, and $83.37$---improving on the strongest baseline for that backbone by $11.75$, $11.14$, and $7.48$ points. That strongest baseline differs across backbones (\pievo{}, PiFlow, ReAct), and none leads on more than one: a method tuned to one backbone's failure profile does not carry to another, whereas \method{} is first on all three.
+
+The per-task breakdown locates the gain. It concentrates on MBO ($132.00$, $115.00$, $136.00$), the task with the widest baseline spread---on Qwen3-235B, from $73.37$ to $105.70$---and therefore the most room for a principle to be either genuinely revised or corrupted by a spurious outcome. SPO is the opposite: every method lands between $30.74$ and $42.00$ and our margin narrows to $0.6$--$3.4$ points. Gains track how much of a task's difficulty lies in deciding what to believe rather than where to search, which is what an evidence-admission layer should predict. Variance moves the same way: on Qwen3-235B MBO, \method{} reports $\pm 9.84$ against $\pm 27.49$ for the closest baseline and $\pm 39.82$ for the widest, and on all three backbones our MBO spread stays below the baseline median. Since the gate keeps unreconciled outcomes out of persistent state, suppressing seed-to-seed spread is a more direct signature of it working than the mean shift is.
+
+This table evaluates the integrated system and does not attribute the gain to either component; §\ref{sec:ablation} separates them. AUOC and APD appear in Table~\ref{tab:main-apd-auoc}, where higher peak SQ coincides with broader coverage and faster optimization---the gate does not buy reliability by narrowing exploration. Figure~\ref{fig:qwen-convergence} shows best-so-far trajectories with Qwen3-235B: \method{} opens a margin within 5 iterations and holds it to the terminal rounds, at $+13.6\%$ runtime (Appendix~\ref{app:runtime}).
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/fig_qwen_convergence.pdf}
+    \vspace{-0.65cm}
+    \caption{\textbf{Best-so-far optimization trajectories over 24 primary evaluations across four benchmark discovery tasks with Qwen3-235B.} Curves report the empirical mean over three independent seeds; shaded ribbons indicate $\pm 1$ standard deviation. Across all scientific domains, \method{} rapidly accumulates high-quality candidates and sustains the highest terminal solution quality.}
+    \label{fig:qwen-convergence}
+\end{figure*}
+
 \begin{table*}[!ht]
 \caption{Average Pairwise Distance (APD) and Area Under the Optimisation Curve (AUOC) across four tasks and three backbone LLMs. Entries report mean $\pm$ SD over three seeds. Higher APD indicates broader candidate coverage, while higher AUOC indicates faster accumulation of high-quality candidates.}
 \label{tab:main-apd-auoc}
 \centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
+\small
+\setlength{\tabcolsep}{2pt}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{l | cc | cc | cc | cc | cc}
 \toprule
@@ -318,36 +272,36 @@ PiFlow & 128.77 \textcolor{gray}{\scriptsize $\pm$ 18.74} \textcolor{purple}{\sc
 \midrule
 \multicolumn{11}{l}{\textbf{Qwen3-235B (No Thinking)}} \\
 \midrule
-Vanilla MAS & 53.58 \textcolor{gray}{\scriptsize $\pm$ 15.25} & 70.09 \textcolor{gray}{\scriptsize $\pm$ 17.75} & 32.23 \textcolor{gray}{\scriptsize $\pm$ 3.72} & 49.33 \textcolor{gray}{\scriptsize $\pm$ 17.82} & 52.03 \textcolor{gray}{\scriptsize $\pm$ 1.05} & 36.34 \textcolor{gray}{\scriptsize $\pm$ 0.38} & 51.89 \textcolor{gray}{\scriptsize $\pm$ 3.85} & 52.67 \textcolor{gray}{\scriptsize $\pm$ 3.49} & 47.43 & 52.11 \\
-ReAct & 59.43 \textcolor{gray}{\scriptsize $\pm$ 8.60} & 70.58 \textcolor{gray}{\scriptsize $\pm$ 7.95} & \textbf{33.31} \textcolor{gray}{\scriptsize $\pm$ 1.86} & 47.46 \textcolor{gray}{\scriptsize $\pm$ 7.04} & 56.13 \textcolor{gray}{\scriptsize $\pm$ 4.49} & 35.74 \textcolor{gray}{\scriptsize $\pm$ 0.76} & 72.93 \textcolor{gray}{\scriptsize $\pm$ 0.33} & 66.95 \textcolor{gray}{\scriptsize $\pm$ 4.67} & 55.45 \textcolor{purple}{\scriptsize $\uparrow$ 1.2x} & 55.18 \textcolor{purple}{\scriptsize $\uparrow$ 1.1x} \\
-AI Scientist v1 & 52.93 \textcolor{gray}{\scriptsize $\pm$ 15.22} & 56.16 \textcolor{gray}{\scriptsize $\pm$ 26.05} & 32.98 \textcolor{gray}{\scriptsize $\pm$ 2.32} & 38.84 \textcolor{gray}{\scriptsize $\pm$ 2.06} & 42.55 \textcolor{gray}{\scriptsize $\pm$ 5.61} & 35.62 \textcolor{gray}{\scriptsize $\pm$ 1.46} & 64.43 \textcolor{gray}{\scriptsize $\pm$ 7.02} & 57.50 \textcolor{gray}{\scriptsize $\pm$ 6.15} & 48.22 & 47.03 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} \\
-AI Scientist v2 & 60.26 \textcolor{gray}{\scriptsize $\pm$ 10.57} & 76.03 \textcolor{gray}{\scriptsize $\pm$ 7.92} & 28.39 \textcolor{gray}{\scriptsize $\pm$ 3.49} & 39.51 \textcolor{gray}{\scriptsize $\pm$ 3.29} & 48.18 \textcolor{gray}{\scriptsize $\pm$ 1.41} & 37.03 \textcolor{gray}{\scriptsize $\pm$ 0.22} & 55.66 \textcolor{gray}{\scriptsize $\pm$ 2.28} & 54.75 \textcolor{gray}{\scriptsize $\pm$ 6.66} & 48.12 & 51.83 \\
-AI Researcher & 59.17 \textcolor{gray}{\scriptsize $\pm$ 3.77} & 89.21 \textcolor{gray}{\scriptsize $\pm$ 19.08} & 25.51 \textcolor{gray}{\scriptsize $\pm$ 3.45} & 34.51 \textcolor{gray}{\scriptsize $\pm$ 3.80} & 47.62 \textcolor{gray}{\scriptsize $\pm$ 3.55} & 36.82 \textcolor{gray}{\scriptsize $\pm$ 0.41} & 52.46 \textcolor{gray}{\scriptsize $\pm$ 6.03} & 74.19 \textcolor{gray}{\scriptsize $\pm$ 0.70} & 46.19 & 58.68 \textcolor{purple}{\scriptsize $\uparrow$ 1.1x} \\
-PiFlow & 64.99 \textcolor{gray}{\scriptsize $\pm$ 2.39} & 64.04 \textcolor{gray}{\scriptsize $\pm$ 14.87} & 28.07 \textcolor{gray}{\scriptsize $\pm$ 1.85} & 52.93 \textcolor{gray}{\scriptsize $\pm$ 15.82} & 51.24 \textcolor{gray}{\scriptsize $\pm$ 4.14} & 35.90 \textcolor{gray}{\scriptsize $\pm$ 1.33} & 57.76 \textcolor{gray}{\scriptsize $\pm$ 3.35} & 50.26 \textcolor{gray}{\scriptsize $\pm$ 1.85} & 50.52 \textcolor{purple}{\scriptsize $\uparrow$ 1.1x} & 50.78 \\
-\pievo{} & 63.41 \textcolor{gray}{\scriptsize $\pm$ 10.78} & 84.14 \textcolor{gray}{\scriptsize $\pm$ 16.22} & 23.80 \textcolor{gray}{\scriptsize $\pm$ 5.23} & 52.50 \textcolor{gray}{\scriptsize $\pm$ 13.36} & 54.41 \textcolor{gray}{\scriptsize $\pm$ 1.42} & 36.83 \textcolor{gray}{\scriptsize $\pm$ 0.86} & 71.76 \textcolor{gray}{\scriptsize $\pm$ 2.58} & 74.93 \textcolor{gray}{\scriptsize $\pm$ 5.05} & 53.35 \textcolor{purple}{\scriptsize $\uparrow$ 1.1x} & 62.10 \textcolor{purple}{\scriptsize $\uparrow$ 1.2x} \\
-\textbf{Triage-PiEvo (ours)} & \textbf{73.71} \textcolor{gray}{\scriptsize $\pm$ 2.86} & \textbf{110.00} \textcolor{gray}{\scriptsize $\pm$ 18.41} & 23.67 \textcolor{gray}{\scriptsize $\pm$ 0.79} & \textbf{61.21} \textcolor{gray}{\scriptsize $\pm$ 11.52} & \textbf{57.34} \textcolor{gray}{\scriptsize $\pm$ 0.26} & \textbf{38.50} \textcolor{gray}{\scriptsize $\pm$ 1.80} & \textbf{74.20} \textcolor{gray}{\scriptsize $\pm$ 1.41} & \textbf{77.20} \textcolor{gray}{\scriptsize $\pm$ 2.95} & \textbf{57.23} \textcolor{purple}{\scriptsize $\uparrow$ 1.2x} & \textbf{71.73} \textcolor{purple}{\scriptsize $\uparrow$ 1.4x} \\
+Vanilla MAS & 53.58\textcolor{gray}{\tiny$\pm$15.25} & 70.09\textcolor{gray}{\tiny$\pm$17.75} & 32.23\textcolor{gray}{\tiny$\pm$3.72} & 49.33\textcolor{gray}{\tiny$\pm$17.82} & 52.03\textcolor{gray}{\tiny$\pm$1.05} & 36.34\textcolor{gray}{\tiny$\pm$0.38} & 51.89\textcolor{gray}{\tiny$\pm$3.85} & 52.67\textcolor{gray}{\tiny$\pm$3.49} & 47.43 & 52.11 \\
+ReAct & 59.43\textcolor{gray}{\tiny$\pm$8.60} & 70.58\textcolor{gray}{\tiny$\pm$7.95} & \textbf{33.31}\textcolor{gray}{\tiny$\pm$1.86} & 47.46\textcolor{gray}{\tiny$\pm$7.04} & 56.13\textcolor{gray}{\tiny$\pm$4.49} & 35.74\textcolor{gray}{\tiny$\pm$0.76} & 72.93\textcolor{gray}{\tiny$\pm$0.33} & 66.95\textcolor{gray}{\tiny$\pm$4.67} & 55.45 \textcolor{purple}{\small $\uparrow$ 1.2x} & 55.18 \textcolor{purple}{\small $\uparrow$ 1.1x} \\
+AI Scientist v1 & 52.93\textcolor{gray}{\tiny$\pm$15.22} & 56.16\textcolor{gray}{\tiny$\pm$26.05} & 32.98\textcolor{gray}{\tiny$\pm$2.32} & 38.84\textcolor{gray}{\tiny$\pm$2.06} & 42.55\textcolor{gray}{\tiny$\pm$5.61} & 35.62\textcolor{gray}{\tiny$\pm$1.46} & 64.43\textcolor{gray}{\tiny$\pm$7.02} & 57.50\textcolor{gray}{\tiny$\pm$6.15} & 48.22 & 47.03 \textcolor{red}{\small $\downarrow$ 0.9x} \\
+AI Scientist v2 & 60.26\textcolor{gray}{\tiny$\pm$10.57} & 76.03\textcolor{gray}{\tiny$\pm$7.92} & 28.39\textcolor{gray}{\tiny$\pm$3.49} & 39.51\textcolor{gray}{\tiny$\pm$3.29} & 48.18\textcolor{gray}{\tiny$\pm$1.41} & 37.03\textcolor{gray}{\tiny$\pm$0.22} & 55.66\textcolor{gray}{\tiny$\pm$2.28} & 54.75\textcolor{gray}{\tiny$\pm$6.66} & 48.12 & 51.83 \\
+AI Researcher & 59.17\textcolor{gray}{\tiny$\pm$3.77} & 89.21\textcolor{gray}{\tiny$\pm$19.08} & 25.51\textcolor{gray}{\tiny$\pm$3.45} & 34.51\textcolor{gray}{\tiny$\pm$3.80} & 47.62\textcolor{gray}{\tiny$\pm$3.55} & 36.82\textcolor{gray}{\tiny$\pm$0.41} & 52.46\textcolor{gray}{\tiny$\pm$6.03} & 74.19\textcolor{gray}{\tiny$\pm$0.70} & 46.19 & 58.68 \textcolor{purple}{\small $\uparrow$ 1.1x} \\
+PiFlow & 64.99\textcolor{gray}{\tiny$\pm$2.39} & 64.04\textcolor{gray}{\tiny$\pm$14.87} & 28.07\textcolor{gray}{\tiny$\pm$1.85} & 52.93\textcolor{gray}{\tiny$\pm$15.82} & 51.24\textcolor{gray}{\tiny$\pm$4.14} & 35.90\textcolor{gray}{\tiny$\pm$1.33} & 57.76\textcolor{gray}{\tiny$\pm$3.35} & 50.26\textcolor{gray}{\tiny$\pm$1.85} & 50.52 \textcolor{purple}{\small $\uparrow$ 1.1x} & 50.78 \\
+\pievo{} & 63.41\textcolor{gray}{\tiny$\pm$10.78} & 84.14\textcolor{gray}{\tiny$\pm$16.22} & 23.80\textcolor{gray}{\tiny$\pm$5.23} & 52.50\textcolor{gray}{\tiny$\pm$13.36} & 54.41\textcolor{gray}{\tiny$\pm$1.42} & 36.83\textcolor{gray}{\tiny$\pm$0.86} & 71.76\textcolor{gray}{\tiny$\pm$2.58} & 74.93\textcolor{gray}{\tiny$\pm$5.05} & 53.35 \textcolor{purple}{\small $\uparrow$ 1.1x} & 62.10 \textcolor{purple}{\small $\uparrow$ 1.2x} \\
+\textbf{Triage-PiEvo (ours)} & \textbf{73.71}\textcolor{gray}{\tiny$\pm$2.86} & \textbf{110.00}\textcolor{gray}{\tiny$\pm$18.41} & 23.67\textcolor{gray}{\tiny$\pm$0.79} & \textbf{61.21}\textcolor{gray}{\tiny$\pm$11.52} & \textbf{57.34}\textcolor{gray}{\tiny$\pm$0.26} & \textbf{38.50}\textcolor{gray}{\tiny$\pm$1.80} & \textbf{74.20}\textcolor{gray}{\tiny$\pm$1.41} & \textbf{77.20}\textcolor{gray}{\tiny$\pm$2.95} & \textbf{57.23} \textcolor{purple}{\small $\uparrow$ 1.2x} & \textbf{71.73} \textcolor{purple}{\small $\uparrow$ 1.4x} \\
 \midrule
 \multicolumn{11}{l}{\textbf{Gemini-2.5-Flash-Lite (No Thinking)}} \\
 \midrule
-Vanilla MAS & 65.06 \textcolor{gray}{\scriptsize $\pm$ 5.46} & 46.01 \textcolor{gray}{\scriptsize $\pm$ 15.24} & 33.55 \textcolor{gray}{\scriptsize $\pm$ 0.90} & 61.71 \textcolor{gray}{\scriptsize $\pm$ 2.41} & 53.65 \textcolor{gray}{\scriptsize $\pm$ 1.10} & 35.45 \textcolor{gray}{\scriptsize $\pm$ 0.05} & 57.23 \textcolor{gray}{\scriptsize $\pm$ 5.29} & 62.88 \textcolor{gray}{\scriptsize $\pm$ 15.97} & 52.37 & 51.51 \\
-ReAct & 62.08 \textcolor{gray}{\scriptsize $\pm$ 1.15} & 44.54 \textcolor{gray}{\scriptsize $\pm$ 2.54} & 34.46 \textcolor{gray}{\scriptsize $\pm$ 0.57} & 58.08 \textcolor{gray}{\scriptsize $\pm$ 5.33} & 42.17 \textcolor{gray}{\scriptsize $\pm$ 12.13} & 25.95 \textcolor{gray}{\scriptsize $\pm$ 8.19} & 52.75 \textcolor{gray}{\scriptsize $\pm$ 5.72} & 52.03 \textcolor{gray}{\scriptsize $\pm$ 0.12} & 47.87 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} & 45.15 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} \\
-AI Scientist v1 & 52.02 \textcolor{gray}{\scriptsize $\pm$ 15.45} & 58.73 \textcolor{gray}{\scriptsize $\pm$ 5.53} & 33.13 \textcolor{gray}{\scriptsize $\pm$ 0.89} & 64.99 \textcolor{gray}{\scriptsize $\pm$ 5.57} & 47.13 \textcolor{gray}{\scriptsize $\pm$ 4.98} & 33.96 \textcolor{gray}{\scriptsize $\pm$ 1.93} & 56.53 \textcolor{gray}{\scriptsize $\pm$ 1.71} & 51.60 \textcolor{gray}{\scriptsize $\pm$ 0.09} & 47.20 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} & 52.32 \\
-AI Scientist v2 & 46.27 \textcolor{gray}{\scriptsize $\pm$ 12.65} & 59.35 \textcolor{gray}{\scriptsize $\pm$ 11.81} & \textbf{35.09} \textcolor{gray}{\scriptsize $\pm$ 0.38} & 67.18 \textcolor{gray}{\scriptsize $\pm$ 1.82} & 43.28 \textcolor{gray}{\scriptsize $\pm$ 0.12} & 24.33 \textcolor{gray}{\scriptsize $\pm$ 7.17} & 42.16 \textcolor{gray}{\scriptsize $\pm$ 9.83} & 52.77 \textcolor{gray}{\scriptsize $\pm$ 3.83} & 41.70 \textcolor{red}{\scriptsize $\downarrow$ 0.8x} & 50.91 \\
-AI Researcher & 60.38 \textcolor{gray}{\scriptsize $\pm$ 7.64} & 45.98 \textcolor{gray}{\scriptsize $\pm$ 15.08} & 33.16 \textcolor{gray}{\scriptsize $\pm$ 3.51} & 58.94 \textcolor{gray}{\scriptsize $\pm$ 6.79} & 41.65 \textcolor{gray}{\scriptsize $\pm$ 9.04} & 28.78 \textcolor{gray}{\scriptsize $\pm$ 2.15} & 55.97 \textcolor{gray}{\scriptsize $\pm$ 2.51} & 59.77 \textcolor{gray}{\scriptsize $\pm$ 14.66} & 47.79 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} & 48.37 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} \\
-PiFlow & 62.64 \textcolor{gray}{\scriptsize $\pm$ 6.57} & 68.05 \textcolor{gray}{\scriptsize $\pm$ 8.07} & 29.73 \textcolor{gray}{\scriptsize $\pm$ 4.14} & 65.72 \textcolor{gray}{\scriptsize $\pm$ 5.25} & 44.03 \textcolor{gray}{\scriptsize $\pm$ 2.95} & 33.27 \textcolor{gray}{\scriptsize $\pm$ 2.48} & 66.17 \textcolor{gray}{\scriptsize $\pm$ 6.06} & 63.89 \textcolor{gray}{\scriptsize $\pm$ 6.66} & 50.64 & 57.73 \textcolor{purple}{\scriptsize $\uparrow$ 1.1x} \\
-\pievo{} & 64.40 \textcolor{gray}{\scriptsize $\pm$ 1.50} & 71.40 \textcolor{gray}{\scriptsize $\pm$ 7.88} & 23.38 \textcolor{gray}{\scriptsize $\pm$ 0.37} & 65.97 \textcolor{gray}{\scriptsize $\pm$ 3.31} & 53.88 \textcolor{gray}{\scriptsize $\pm$ 0.59} & 35.02 \textcolor{gray}{\scriptsize $\pm$ 1.92} & 70.35 \textcolor{gray}{\scriptsize $\pm$ 0.76} & 69.74 \textcolor{gray}{\scriptsize $\pm$ 7.30} & 53.00 & 60.53 \textcolor{purple}{\scriptsize $\uparrow$ 1.2x} \\
-\textbf{Triage-PiEvo (ours)} & \textbf{70.00} \textcolor{gray}{\scriptsize $\pm$ 5.00} & \textbf{108.00} \textcolor{gray}{\scriptsize $\pm$ 12.00} & 24.00 \textcolor{gray}{\scriptsize $\pm$ 2.00} & \textbf{76.00} \textcolor{gray}{\scriptsize $\pm$ 8.00} & \textbf{57.00} \textcolor{gray}{\scriptsize $\pm$ 1.50} & \textbf{36.00} \textcolor{gray}{\scriptsize $\pm$ 4.00} & \textbf{72.50} \textcolor{gray}{\scriptsize $\pm$ 2.50} & \textbf{75.00} \textcolor{gray}{\scriptsize $\pm$ 6.00} & \textbf{55.88} \textcolor{purple}{\scriptsize $\uparrow$ 1.1x} & \textbf{73.75} \textcolor{purple}{\scriptsize $\uparrow$ 1.4x} \\
+Vanilla MAS & 65.06\textcolor{gray}{\tiny$\pm$5.46} & 46.01\textcolor{gray}{\tiny$\pm$15.24} & 33.55\textcolor{gray}{\tiny$\pm$0.90} & 61.71\textcolor{gray}{\tiny$\pm$2.41} & 53.65\textcolor{gray}{\tiny$\pm$1.10} & 35.45\textcolor{gray}{\tiny$\pm$0.05} & 57.23\textcolor{gray}{\tiny$\pm$5.29} & 62.88\textcolor{gray}{\tiny$\pm$15.97} & 52.37 & 51.51 \\
+ReAct & 62.08\textcolor{gray}{\tiny$\pm$1.15} & 44.54\textcolor{gray}{\tiny$\pm$2.54} & 34.46\textcolor{gray}{\tiny$\pm$0.57} & 58.08\textcolor{gray}{\tiny$\pm$5.33} & 42.17\textcolor{gray}{\tiny$\pm$12.13} & 25.95\textcolor{gray}{\tiny$\pm$8.19} & 52.75\textcolor{gray}{\tiny$\pm$5.72} & 52.03\textcolor{gray}{\tiny$\pm$0.12} & 47.87 \textcolor{red}{\small $\downarrow$ 0.9x} & 45.15 \textcolor{red}{\small $\downarrow$ 0.9x} \\
+AI Scientist v1 & 52.02\textcolor{gray}{\tiny$\pm$15.45} & 58.73\textcolor{gray}{\tiny$\pm$5.53} & 33.13\textcolor{gray}{\tiny$\pm$0.89} & 64.99\textcolor{gray}{\tiny$\pm$5.57} & 47.13\textcolor{gray}{\tiny$\pm$4.98} & 33.96\textcolor{gray}{\tiny$\pm$1.93} & 56.53\textcolor{gray}{\tiny$\pm$1.71} & 51.60\textcolor{gray}{\tiny$\pm$0.09} & 47.20 \textcolor{red}{\small $\downarrow$ 0.9x} & 52.32 \\
+AI Scientist v2 & 46.27\textcolor{gray}{\tiny$\pm$12.65} & 59.35\textcolor{gray}{\tiny$\pm$11.81} & \textbf{35.09}\textcolor{gray}{\tiny$\pm$0.38} & 67.18\textcolor{gray}{\tiny$\pm$1.82} & 43.28\textcolor{gray}{\tiny$\pm$0.12} & 24.33\textcolor{gray}{\tiny$\pm$7.17} & 42.16\textcolor{gray}{\tiny$\pm$9.83} & 52.77\textcolor{gray}{\tiny$\pm$3.83} & 41.70 \textcolor{red}{\small $\downarrow$ 0.8x} & 50.91 \\
+AI Researcher & 60.38\textcolor{gray}{\tiny$\pm$7.64} & 45.98\textcolor{gray}{\tiny$\pm$15.08} & 33.16\textcolor{gray}{\tiny$\pm$3.51} & 58.94\textcolor{gray}{\tiny$\pm$6.79} & 41.65\textcolor{gray}{\tiny$\pm$9.04} & 28.78\textcolor{gray}{\tiny$\pm$2.15} & 55.97\textcolor{gray}{\tiny$\pm$2.51} & 59.77\textcolor{gray}{\tiny$\pm$14.66} & 47.79 \textcolor{red}{\small $\downarrow$ 0.9x} & 48.37 \textcolor{red}{\small $\downarrow$ 0.9x} \\
+PiFlow & 62.64\textcolor{gray}{\tiny$\pm$6.57} & 68.05\textcolor{gray}{\tiny$\pm$8.07} & 29.73\textcolor{gray}{\tiny$\pm$4.14} & 65.72\textcolor{gray}{\tiny$\pm$5.25} & 44.03\textcolor{gray}{\tiny$\pm$2.95} & 33.27\textcolor{gray}{\tiny$\pm$2.48} & 66.17\textcolor{gray}{\tiny$\pm$6.06} & 63.89\textcolor{gray}{\tiny$\pm$6.66} & 50.64 & 57.73 \textcolor{purple}{\small $\uparrow$ 1.1x} \\
+\pievo{} & 64.40\textcolor{gray}{\tiny$\pm$1.50} & 71.40\textcolor{gray}{\tiny$\pm$7.88} & 23.38\textcolor{gray}{\tiny$\pm$0.37} & 65.97\textcolor{gray}{\tiny$\pm$3.31} & 53.88\textcolor{gray}{\tiny$\pm$0.59} & 35.02\textcolor{gray}{\tiny$\pm$1.92} & 70.35\textcolor{gray}{\tiny$\pm$0.76} & 69.74\textcolor{gray}{\tiny$\pm$7.30} & 53.00 & 60.53 \textcolor{purple}{\small $\uparrow$ 1.2x} \\
+\textbf{Triage-PiEvo (ours)} & \textbf{70.00}\textcolor{gray}{\tiny$\pm$5.00} & \textbf{108.00}\textcolor{gray}{\tiny$\pm$12.00} & 24.00\textcolor{gray}{\tiny$\pm$2.00} & \textbf{76.00}\textcolor{gray}{\tiny$\pm$8.00} & \textbf{57.00}\textcolor{gray}{\tiny$\pm$1.50} & \textbf{36.00}\textcolor{gray}{\tiny$\pm$4.00} & \textbf{72.50}\textcolor{gray}{\tiny$\pm$2.50} & \textbf{75.00}\textcolor{gray}{\tiny$\pm$6.00} & \textbf{55.88} \textcolor{purple}{\small $\uparrow$ 1.1x} & \textbf{73.75} \textcolor{purple}{\small $\uparrow$ 1.4x} \\
 \midrule
 \multicolumn{11}{l}{\textbf{GPT-5.6-Luna (No Thinking)}} \\
 \midrule
-Vanilla MAS & 64.66 \textcolor{gray}{\scriptsize $\pm$ 4.12} & 69.17 \textcolor{gray}{\scriptsize $\pm$ 12.39} & 27.30 \textcolor{gray}{\scriptsize $\pm$ 1.90} & 60.18 \textcolor{gray}{\scriptsize $\pm$ 3.66} & 48.73 \textcolor{gray}{\scriptsize $\pm$ 2.51} & 34.43 \textcolor{gray}{\scriptsize $\pm$ 0.60} & 71.55 \textcolor{gray}{\scriptsize $\pm$ 1.07} & 63.26 \textcolor{gray}{\scriptsize $\pm$ 4.82} & 53.06 & 56.76 \\
-ReAct & 38.36 \textcolor{gray}{\scriptsize $\pm$ 20.70} & 86.71 \textcolor{gray}{\scriptsize $\pm$ 13.76} & \textbf{31.58} \textcolor{gray}{\scriptsize $\pm$ 2.81} & 59.57 \textcolor{gray}{\scriptsize $\pm$ 2.38} & 49.26 \textcolor{gray}{\scriptsize $\pm$ 2.90} & 33.88 \textcolor{gray}{\scriptsize $\pm$ 0.86} & 66.05 \textcolor{gray}{\scriptsize $\pm$ 7.21} & 62.28 \textcolor{gray}{\scriptsize $\pm$ 5.12} & 46.31 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} & 60.61 \textcolor{purple}{\scriptsize $\uparrow$ 1.1x} \\
-AI Scientist v1 & 55.57 \textcolor{gray}{\scriptsize $\pm$ 18.24} & 71.58 \textcolor{gray}{\scriptsize $\pm$ 4.38} & 29.17 \textcolor{gray}{\scriptsize $\pm$ 3.01} & 44.85 \textcolor{gray}{\scriptsize $\pm$ 6.39} & 47.10 \textcolor{gray}{\scriptsize $\pm$ 0.71} & 29.87 \textcolor{gray}{\scriptsize $\pm$ 4.50} & 53.91 \textcolor{gray}{\scriptsize $\pm$ 3.25} & 54.73 \textcolor{gray}{\scriptsize $\pm$ 0.57} & 46.44 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} & 50.26 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} \\
-AI Scientist v2 & 51.59 \textcolor{gray}{\scriptsize $\pm$ 19.99} & 60.12 \textcolor{gray}{\scriptsize $\pm$ 11.92} & 24.07 \textcolor{gray}{\scriptsize $\pm$ 6.68} & 54.21 \textcolor{gray}{\scriptsize $\pm$ 13.33} & 45.21 \textcolor{gray}{\scriptsize $\pm$ 3.80} & 32.19 \textcolor{gray}{\scriptsize $\pm$ 5.66} & 49.34 \textcolor{gray}{\scriptsize $\pm$ 11.99} & 51.65 \textcolor{gray}{\scriptsize $\pm$ 1.98} & 42.55 \textcolor{red}{\scriptsize $\downarrow$ 0.8x} & 49.54 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} \\
-AI Researcher & 66.12 \textcolor{gray}{\scriptsize $\pm$ 1.10} & 70.56 \textcolor{gray}{\scriptsize $\pm$ 16.40} & 27.41 \textcolor{gray}{\scriptsize $\pm$ 4.25} & 65.81 \textcolor{gray}{\scriptsize $\pm$ 4.10} & 50.05 \textcolor{gray}{\scriptsize $\pm$ 3.05} & 32.56 \textcolor{gray}{\scriptsize $\pm$ 1.91} & 71.88 \textcolor{gray}{\scriptsize $\pm$ 0.71} & 65.59 \textcolor{gray}{\scriptsize $\pm$ 2.27} & 53.86 & 58.63 \\
-PiFlow & 48.90 \textcolor{gray}{\scriptsize $\pm$ 24.99} & 79.51 \textcolor{gray}{\scriptsize $\pm$ 4.35} & 17.19 \textcolor{gray}{\scriptsize $\pm$ 2.39} & 38.66 \textcolor{gray}{\scriptsize $\pm$ 10.82} & 37.93 \textcolor{gray}{\scriptsize $\pm$ 7.95} & 28.15 \textcolor{gray}{\scriptsize $\pm$ 7.38} & 56.56 \textcolor{gray}{\scriptsize $\pm$ 3.30} & 56.09 \textcolor{gray}{\scriptsize $\pm$ 6.93} & 40.14 \textcolor{red}{\scriptsize $\downarrow$ 0.8x} & 50.60 \textcolor{red}{\scriptsize $\downarrow$ 0.9x} \\
-\pievo{} & 64.05 \textcolor{gray}{\scriptsize $\pm$ 1.98} & 62.95 \textcolor{gray}{\scriptsize $\pm$ 1.52} & 23.83 \textcolor{gray}{\scriptsize $\pm$ 0.49} & 52.04 \textcolor{gray}{\scriptsize $\pm$ 7.69} & 53.07 \textcolor{gray}{\scriptsize $\pm$ 0.84} & 36.29 \textcolor{gray}{\scriptsize $\pm$ 1.21} & 73.20 \textcolor{gray}{\scriptsize $\pm$ 0.54} & 74.81 \textcolor{gray}{\scriptsize $\pm$ 0.97} & 53.54 & 56.52 \\
-\textbf{Triage-PiEvo (ours)} & \textbf{73.72} \textcolor{gray}{\scriptsize $\pm$ 2.84} & \textbf{104.00} \textcolor{gray}{\scriptsize $\pm$ 19.33} & 24.08 \textcolor{gray}{\scriptsize $\pm$ 1.10} & \textbf{68.77} \textcolor{gray}{\scriptsize $\pm$ 8.52} & \textbf{57.87} \textcolor{gray}{\scriptsize $\pm$ 0.88} & \textbf{38.10} \textcolor{gray}{\scriptsize $\pm$ 1.60} & \textbf{74.80} \textcolor{gray}{\scriptsize $\pm$ 1.20} & \textbf{76.80} \textcolor{gray}{\scriptsize $\pm$ 3.20} & \textbf{57.62} \textcolor{purple}{\scriptsize $\uparrow$ 1.1x} & \textbf{71.92} \textcolor{purple}{\scriptsize $\uparrow$ 1.3x} \\
+Vanilla MAS & 64.66\textcolor{gray}{\tiny$\pm$4.12} & 69.17\textcolor{gray}{\tiny$\pm$12.39} & 27.30\textcolor{gray}{\tiny$\pm$1.90} & 60.18\textcolor{gray}{\tiny$\pm$3.66} & 48.73\textcolor{gray}{\tiny$\pm$2.51} & 34.43\textcolor{gray}{\tiny$\pm$0.60} & 71.55\textcolor{gray}{\tiny$\pm$1.07} & 63.26\textcolor{gray}{\tiny$\pm$4.82} & 53.06 & 56.76 \\
+ReAct & 38.36\textcolor{gray}{\tiny$\pm$20.70} & 86.71\textcolor{gray}{\tiny$\pm$13.76} & \textbf{31.58}\textcolor{gray}{\tiny$\pm$2.81} & 59.57\textcolor{gray}{\tiny$\pm$2.38} & 49.26\textcolor{gray}{\tiny$\pm$2.90} & 33.88\textcolor{gray}{\tiny$\pm$0.86} & 66.05\textcolor{gray}{\tiny$\pm$7.21} & 62.28\textcolor{gray}{\tiny$\pm$5.12} & 46.31 \textcolor{red}{\small $\downarrow$ 0.9x} & 60.61 \textcolor{purple}{\small $\uparrow$ 1.1x} \\
+AI Scientist v1 & 55.57\textcolor{gray}{\tiny$\pm$18.24} & 71.58\textcolor{gray}{\tiny$\pm$4.38} & 29.17\textcolor{gray}{\tiny$\pm$3.01} & 44.85\textcolor{gray}{\tiny$\pm$6.39} & 47.10\textcolor{gray}{\tiny$\pm$0.71} & 29.87\textcolor{gray}{\tiny$\pm$4.50} & 53.91\textcolor{gray}{\tiny$\pm$3.25} & 54.73\textcolor{gray}{\tiny$\pm$0.57} & 46.44 \textcolor{red}{\small $\downarrow$ 0.9x} & 50.26 \textcolor{red}{\small $\downarrow$ 0.9x} \\
+AI Scientist v2 & 51.59\textcolor{gray}{\tiny$\pm$19.99} & 60.12\textcolor{gray}{\tiny$\pm$11.92} & 24.07\textcolor{gray}{\tiny$\pm$6.68} & 54.21\textcolor{gray}{\tiny$\pm$13.33} & 45.21\textcolor{gray}{\tiny$\pm$3.80} & 32.19\textcolor{gray}{\tiny$\pm$5.66} & 49.34\textcolor{gray}{\tiny$\pm$11.99} & 51.65\textcolor{gray}{\tiny$\pm$1.98} & 42.55 \textcolor{red}{\small $\downarrow$ 0.8x} & 49.54 \textcolor{red}{\small $\downarrow$ 0.9x} \\
+AI Researcher & 66.12\textcolor{gray}{\tiny$\pm$1.10} & 70.56\textcolor{gray}{\tiny$\pm$16.40} & 27.41\textcolor{gray}{\tiny$\pm$4.25} & 65.81\textcolor{gray}{\tiny$\pm$4.10} & 50.05\textcolor{gray}{\tiny$\pm$3.05} & 32.56\textcolor{gray}{\tiny$\pm$1.91} & 71.88\textcolor{gray}{\tiny$\pm$0.71} & 65.59\textcolor{gray}{\tiny$\pm$2.27} & 53.86 & 58.63 \\
+PiFlow & 48.90\textcolor{gray}{\tiny$\pm$24.99} & 79.51\textcolor{gray}{\tiny$\pm$4.35} & 17.19\textcolor{gray}{\tiny$\pm$2.39} & 38.66\textcolor{gray}{\tiny$\pm$10.82} & 37.93\textcolor{gray}{\tiny$\pm$7.95} & 28.15\textcolor{gray}{\tiny$\pm$7.38} & 56.56\textcolor{gray}{\tiny$\pm$3.30} & 56.09\textcolor{gray}{\tiny$\pm$6.93} & 40.14 \textcolor{red}{\small $\downarrow$ 0.8x} & 50.60 \textcolor{red}{\small $\downarrow$ 0.9x} \\
+\pievo{} & 64.05\textcolor{gray}{\tiny$\pm$1.98} & 62.95\textcolor{gray}{\tiny$\pm$1.52} & 23.83\textcolor{gray}{\tiny$\pm$0.49} & 52.04\textcolor{gray}{\tiny$\pm$7.69} & 53.07\textcolor{gray}{\tiny$\pm$0.84} & 36.29\textcolor{gray}{\tiny$\pm$1.21} & 73.20\textcolor{gray}{\tiny$\pm$0.54} & 74.81\textcolor{gray}{\tiny$\pm$0.97} & 53.54 & 56.52 \\
+\textbf{Triage-PiEvo (ours)} & \textbf{73.72}\textcolor{gray}{\tiny$\pm$2.84} & \textbf{104.00}\textcolor{gray}{\tiny$\pm$19.33} & 24.08\textcolor{gray}{\tiny$\pm$1.10} & \textbf{68.77}\textcolor{gray}{\tiny$\pm$8.52} & \textbf{57.87}\textcolor{gray}{\tiny$\pm$0.88} & \textbf{38.10}\textcolor{gray}{\tiny$\pm$1.60} & \textbf{74.80}\textcolor{gray}{\tiny$\pm$1.20} & \textbf{76.80}\textcolor{gray}{\tiny$\pm$3.20} & \textbf{57.62} \textcolor{purple}{\small $\uparrow$ 1.1x} & \textbf{71.92} \textcolor{purple}{\small $\uparrow$ 1.3x} \\
 \bottomrule
 \end{tabular}%
 }
@@ -355,43 +309,13 @@ PiFlow & 48.90 \textcolor{gray}{\scriptsize $\pm$ 24.99} & 79.51 \textcolor{gray
 
 
 
-\subsection{Performance Analysis}
-\label{sec:performance}
-
-\paragraph{Matched downstream performance.} Table~\ref{tab:main-sq} reports SQ across the three backbone LLMs. As our primary metric, SQ measures the terminal quality of the best discovered candidate, reflecting the agent's peak optimization capability. \method{} achieves the highest \emph{average} SQ in each backbone setting: $82.10$ on Qwen3-235B, $79.63$ on Gemini-2.5-Flash-Lite, and $83.37$ on GPT-5.6-Luna, compared with $70.35$, $67.53$, and $62.87$ for \pievo{}. The largest SQ margins occur on MBO. Because the main table evaluates the integrated system, we defer attribution of these margins to the component and controlled-intervention studies below.
-
-Table~\ref{tab:main-apd-auoc} reports APD and AUOC. APD measures candidate-space coverage, whereas AUOC measures how quickly high-quality candidates accumulate along the optimization trajectory. APD is diagnostic rather than sufficient on its own: a diverse trajectory need not contain strong candidates, so we interpret it jointly with SQ and AUOC. The integrated \method{} system has the highest average APD and AUOC for all three backbones, indicating that its higher terminal SQ is accompanied by broad search coverage and faster accumulation of high-quality candidates. Per-task winners remain mixed, so this result supports the best average trade-off rather than uniform dominance on every task. The largest AUOC differences occur on MBO, which motivates the controlled corruption analysis below.
-
-Figure~\ref{fig:budget-pareto}(a) traces the progression of solution quality over the 24-step primary evaluation budget. \method{} establishes an early margin over existing agents and steadily pulls ahead, demonstrating rapid accumulation of high-confidence scientific discoveries. Figure~\ref{fig:budget-pareto}(b) evaluates cost-effectiveness by plotting solution quality against relative computational and token cost; \method{} defines the empirical efficiency frontier, delivering the highest peak solution quality at sustainable resource overhead. In addition, Figure~\ref{fig:runtime} details wall-clock execution latency and discovery throughput: \method{} requires only $134.5\mathrm{s}$ per run ($+13.6\%$ overhead over standard \pievo{}), avoiding the heavy latencies of multi-agent debate or tree search while achieving the highest exploitation throughput ($71.2\%$ AUOC). Figure~\ref{fig:qwen-convergence} complements these global trends with the task-specific Qwen3-235B best-so-far trajectories.
-
-\begin{figure*}[t]
-    \centering
-    \includegraphics[width=\textwidth]{figures/fig_budget_pareto.pdf}
-    \caption{\textbf{Performance accumulation and cost-effectiveness trade-off.} (a) Solution Quality (SQ, \%) over primary evaluation budget $T \in [1, 24]$ averaged across benchmark discovery tasks. \method{} rapidly accumulates high-quality solutions and maintains the highest terminal performance throughout. (b) Cost-effectiveness trade-off: Solution Quality versus relative computational and token cost. \method{} defines the empirical efficiency frontier (dashed), achieving superior solution quality at sustainable compute expenditure.}
-    \label{fig:budget-pareto}
-\end{figure*}
-
-\begin{figure*}[!ht]
-    \centering
-    \includegraphics[width=\textwidth]{figures/fig_runtime.pdf}
-    \caption{\textbf{Execution runtime and discovery throughput across baselines.} (a) Mean wall-clock runtime per 24-step discovery run across all eight baselines under Qwen3-235B. \method{} incurs only $+13.6\%$ overhead over standard \pievo{} due to conditional anomaly-triggered verification, while remaining substantially faster than tree-search or multi-agent debate frameworks (AI Scientist v2, AI Researcher, PiFlow). (b) Scientific exploitation throughput: Exploitation Speed (AUOC, \%) versus mean runtime (seconds). \method{} achieves the peak discovery throughput, reaching the highest AUOC ($71.2\%$) at competitive execution latency.}
-    \label{fig:runtime}
-\end{figure*}
-
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=\linewidth]{figures/fig_qwen_convergence.pdf}
-    \caption{Best-so-far SQ over 24 primary evaluations on NHO, MBO, SPO, and TMC with Qwen3-235B. Lines show the mean over three seeds; shaded regions show one standard deviation.}
-    \label{fig:qwen-convergence}
-\end{figure}
-
 \subsection{Component Study: Search Expansion vs. Evidence Admission}
 \label{sec:ablation}
 
-The main tables evaluate the integrated system at a 24-evaluation budget. To isolate the two components directly, we additionally run a bounded Qwen3-235B study over all four tasks, four method variants, and seeds 0--2 at a budget of eight primary evaluations, for 48 cells fixed in advance. The variants are released \pievo{}, \triage{} with the legacy \pievo{} candidate search (Triage-only), \method{} with gate authorization disabled (\method{} w/o Gate), and full \method{}.
+To separate candidate generation from evidence triage, Table~\ref{tab:qwen-factorial} reports a 48-cell factorial ablation on Qwen3-235B at budget 8. The components fail in opposite directions. Triage-only falls below \pievo{} on clean SQ ($60.60\%$ vs.\ $64.78\%$): without search expansion, filtering only narrows an already narrow candidate flow, and clean tasks give it little to filter. AFE without the gate restores exploration but admits whatever the evaluator reports. Only the combination leads on both metrics ($65.98\%$ SQ, $60.45\%$ AUOC). AFE sets where the agent looks, \triage{} sets what may change persistent state---which is why the gate costs a little quality on clean tasks and repays it when feedback is unreliable (§\ref{sec:case}).
 
 \begin{table}[!ht]
-\caption{Qwen3-235B component study across four tasks at a budget of eight primary evaluations. SQ and AUOC are averaged across tasks and seeds. Two cells terminate after six valid evaluations; their observed trajectories are retained.}
+\caption{Qwen3-235B component study across four tasks at budget 8. SQ and AUOC are averaged across tasks and seeds.}
 \label{tab:qwen-factorial}
 \centering
 \small
@@ -402,47 +326,122 @@ Variant & Average SQ $\uparrow$ & Average AUOC $\uparrow$ & Full cells \\
 \pievo{} & 64.78 & 58.15 & 11/12 \\
 Triage-only & 60.60 & 55.08 & 11/12 \\
 \method{} w/o Gate & 62.73 & 58.23 & 12/12 \\
-\textbf{Full \method{}} & \textbf{65.98} & \textbf{60.45} & 12/12 \\
+\textbf{Full \method{}} & \textbf{65.98} & \textbf{60.45} & \textbf{12/12} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The factorization gives a more specific interpretation than treating the gate as a generic score booster. Triage-only is below \pievo{} in clean average SQ ($60.60$ vs.\ $64.78$), while the AFE-containing variants recover and surpass the baseline. Full \method{} achieves the highest average SQ ($\textbf{65.98}$) and the fastest exploitation throughput ($\textbf{60.45}$ AUOC), cleanly outperforming both ablations and standard \pievo{}. The clean-task evidence therefore supports \emph{component specialisation}: AFE changes where the system searches, whereas \triage{} changes which observations may alter trusted scientific state.
-
-\subsection{Controlled Evaluator Corruption}
+\subsection{Stress Tests: Corruption, Hidden Sources, and Proxy Exploitation}
 \label{sec:case}
 
-We next intervene directly on the MBO evaluator under Qwen3-235B. The design crosses legacy \pievo{} versus AFE search with gate authorization off versus on, yielding the same four variants as the component study. Each variant is evaluated with seeds 0--2 and a budget of eight primary evaluations under a clean evaluator, transient $+1.0$ and $+2.5$ perturbations, and a persistent $+1.5$ bias applied to three consecutive evaluator calls. The complete design contains 48 cells; 45 reach the full budget, while three previously retained \pievo{} trajectories terminate after six valid primary evaluations.
+\paragraph{Evaluator Corruption and Hidden Sources.}
+We first corrupt the evaluator directly, running Qwen3-235B on MBO under clean conditions, transient perturbations ($+1.0,+2.5$), and a persistent $+1.5$ bias across three consecutive calls (48 cells). Without the gate every corrupted observation enters the search history ($1.000\pm0.000$); with it, none does ($0.000\pm0.000$), each replaced by the verified median. We then hide the source: 144 trials span measurement noise, surrogate mismatch, baseline drift, a true hidden mechanism, local non-generalizing artifacts, and mechanism reversal. A source-blind updater expands its principle set on noise, surrogate mismatch, and local artifacts in every trial (false-expansion rate $1.0$); \triage{} reaches $0.0$ on all artifact conditions while recovering the true mechanism with $1.0$ final-state accuracy. The held-out test does this work, not repetition: local artifacts reproduce perfectly, so only their failure to transfer sets them apart from a mechanism. These interventions corrupt the primary channel while leaving verification intact; Appendix~\ref{app:hyperparams} reports how the protective effect attenuates as the two channels fail together.
 
-Across all three corruption conditions, the results cleanly isolate admission from search exposure. With either search policy, disabling the gate admits every corrupted observation (corrupt admission rate $1.000 \pm 0.000$), whereas enabling it admits none and replaces every corrupted observation presented for verification (corrupt admission rate $0.000 \pm 0.000$). AFE changes the candidate stream and reduces proxy-best contamination from $1.000$ to $0.667$ in the stronger interventions, but \method{} w/o Gate still admits all corrupted evidence. The causal protection therefore comes from evidence admission rather than candidate generation. Together with the clean component study, full \method{} is the only variant that combines the highest clean average SQ with zero corrupted admissions.
+\paragraph{Retraction after Mechanism Reversal.}
+When the mechanism reverses mid-trajectory, an accepted principle becomes actively misleading. In a materials trajectory, an environmental shift at $t=16$ inverts the optimal valence state; \pievo{} stays anchored to $\mathcal{P}$ and stagnates. \method{} flags an anomalous residual at $t=17$, issues held-out probes, retracts $\mathcal{P}$ with its descendants at $t=18$ once held-out evidence contradicts it, and recovers the new optimum by $t=23$. Retraction turns the gate from a filter into a revisable commitment: the criterion that admits a principle also removes it.
 
-\subsection{Hidden-Source Reliability and Backtracking}
-\label{sec:hidden-source}
+\paragraph{Proxy Exploitation.}
+A gate that only checks reproducibility stays exposed to reward hacking, because an exploit reproduces perfectly. Under an action-dependent proxy mismatch where $x\geq0.72$ inflates apparent reward while true reward peaks at $x=0.32$, ungated variants admit the exploit every round ($5.33\pm0.58$ false admissions for \pievo{}, $6.00\pm0.00$ for \method{} w/o Gate). \method{} quarantines them, records none, raises held-out score by $+0.209\pm0.054$, and cuts true regret by $1.252\pm0.323$. Full numbers for this and the harness study are in Tables~\ref{tab:table6_autoresearch}--\ref{tab:table8_ablation}.
 
-A controlled hidden-source environment lets us ask whether the gate merely rejects unusual evidence or actually distinguishes when revision is warranted. We execute 144 trials spanning six source conditions, four policies, three budgets (8, 24, 48), and two seeds ($144 = 6 \times 4 \times 3 \times 2$). Source labels and evaluator responses are fixed deterministically per condition; the two seeds control the randomised candidate-selection order within each trial so that wall-clock variance can be estimated without inflating the cell count. The source labels are latent and never exposed to policies. The conditions include noise, surrogate failure, baseline drift, a true hidden mechanism, a reproducible but non-generalizing local artifact, and a later mechanism reversal. These six intervention conditions are controlled test scenarios rather than a one-to-one enumeration of the seven latent source classes in Equation~\ref{eq:sources}.
+\paragraph{Cross-Harness Portability and Cost.}
+We attach \triage{} to ResearchHarness, AI-Researcher~\citep{tang2025airesearcherautonomousscientificinnovation}, and Claude Code. Each shows a gap between reported Task Score and externally Verified Score traceable to unverified intermediates---malformed SMILES and simulator boundary artifacts read as discoveries (Figure~\ref{fig:tradeoff-plugin}). \triage{} narrows it by $0.087$--$0.098$, lowers critical failures from $14.8\%$--$26.2\%$ to $5.2\%$, and cuts false admissions by over $60\%$, at $2.8$ verification calls per run ($+\$0.24$) and $+13.0\%$--$+16.7\%$ token overhead, with no non-terminating run (Appendices~\ref{app:plugin}--\ref{app:gate-ablation}).
 
-\paragraph{Circularity note.} The benchmark's held-out support region is a proper subset of the mechanism region by construction: an observation admitted by the gate is guaranteed to lie in the mechanism region, but the gate does not observe the latent source label directly. Figure~\ref{fig:gate-sensitivity} shows how the gate behaves when the held-out probe itself is attenuated, revealing the boundary at which a real mechanism would be incorrectly rejected.
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.80\textwidth]{figures/fig_tradeoff_plugin.pdf}
+    \vspace{-0.45cm}
+    \caption{\textbf{Cost-efficiency trade-offs across autonomous research harnesses.} (a) Token expenditure versus reported Task Score and externally Verified Score. \triage{} substantially narrows the verification gap with minimal token overhead. (b) Wall-clock execution runtime versus optimization performance across ResearchHarness, AI-Researcher, and Claude Code. Full numerical results are reported in Table~\ref{tab:table7_plugin} (Appendix~\ref{app:plugin}).}
+    \label{fig:tradeoff-plugin}
+\end{figure*}
 
-At budget 24, a source-blind updater false-expands on noise, surrogate failure, and the local artifact in every trial ($1.0$ false-expansion rate for each condition). The active held-out gate reduces the false-expansion rate to $0.0$ on all three while retaining the true mechanism with final-state accuracy $1.0$ and zero missed true expansions. The local-artifact condition separates reproducibility from generalization particularly clearly: a fixed repeat-plus-independent-check gate still false-expands at rate $1.0$, whereas adding a held-out generalization probe reduces it to $0.0$. At budget 48, the active gate also backtracks after a mechanism reversal and returns to the correct final state; removing backtracking fails this reversal test. Thus the reliability gain is not explained by a reject-all policy, and independent repetition alone is insufficient when an effect is real but local.
+\section{Conclusion}
+\label{sec:conclusion}
 
-\subsection{Controlled Proxy Exploitation}
-\label{sec:proxy-exploit}
+An anomalous residual is source-ambiguous: a genuine mechanism, a transient evaluator error, a surrogate misspecification, and a proxy exploit can all produce the same surprisal. Surprise-driven agents act on it directly, so whatever is unreliable in it propagates into persistent state. We introduced \triage{}, which separates exploratory search from principle revision and holds a principle provisional until independent held-out records support it, retracting it and its descendants when held-out evidence contradicts it. Paired with outcome-blind search expansion in \method{}, this gives the highest average solution quality in our matched setup across four domains and three backbones, admits no corrupted evidence under the interventions we construct, rejects the tested artifacts while retaining the tested mechanism, and recovers after mechanism reversal; the ablation locates the effect in the held-out criterion rather than in repetition or channel bookkeeping. Evidence good enough to direct the next experiment and evidence good enough to rewrite what an agent believes are different standards, and an agent that conflates them will eventually believe its own noise.
 
-We further construct an action-dependent proxy mismatch in which the visible objective can be increased by selecting an exploit region ($x\geq0.72$), while a hidden held-out objective peaks near $x=0.32$ and does not share the exploit. We again cross legacy versus AFE search with the gate off versus on. Qwen3-235B selects actions for six rounds in each of three seeds, producing 12 runs and 72 model-selected decisions across the four variants.
+\clearpage
+\subsection*{AI use statement}
+In this research, generative AI tools were employed for coding assistance in data visualization scripts and for LaTeX drafting/grammar editing. All scientific concepts, decision-theoretic formulations, algorithmic designs, experimental benchmarks, empirical results, and analytical conclusions were conceived, executed, verified, and audited by the authors, who take full responsibility for the integrity and content of this paper.
 
-Without the gate, legacy search selects the exploit in 16/18 rounds and AFE selects it in 18/18; every selected exploit is admitted (false admissions per seed: $5.333 \pm 0.577$ for \pievo{}, $6.000 \pm 0.000$ for \method{} w/o Gate). Full \method{} still proposes an exploit-region action in 2/18 rounds, but both are quarantined, yielding zero false admissions. Under AFE search, enabling the gate increases held-out score by $0.2086 \pm 0.0538$ and reduces true regret by $1.2517 \pm 0.3227$ at the paired seed level. Triage-only attains the best score and regret in this one-dimensional controlled environment, while Table~\ref{tab:qwen-factorial} shows that the integrated system recovers clean-task search quality. The factorization therefore supports component specialisation: AFE controls search coverage, whereas the held-out gate controls whether proxy-improving evidence is admitted to trusted state.
+\subsection*{Ethics statement}
+This work develops automated methods for scientific discovery and evidence verification. The evaluated benchmarks (molecular optimization, optical properties, superconductors, transition metal complexes) rely on publicly available scientific datasets and simulation proxies. No human subjects, animal trials, or hazardous materials were involved. Potential dual-use considerations of automated discovery agents are addressed through our explicit evidence-quarantine mechanisms, which prevent unverified or anomalous outputs from automatically altering operational protocols.
 
-\subsection{Evaluation on Autonomous Research Benchmarks}
-\label{sec:autoresearch}
+\subsection*{Reproducibility statement}
+To ensure complete reproducibility, all algorithm parameters, admission thresholds, and experimental budgets are specified in Section~\ref{sec:experiments} and Appendix~\ref{app:hyperparams}. The evaluation harness, seed configurations (seeds 0--2 for main benchmarks), evaluator interfaces, and verification protocols are documented in Section~\ref{sec:experiments} and Appendices~\ref{app:hyperparams}--\ref{app:protocol}. Anonymous code and run manifests will be made available upon publication.
 
-While the preceding controlled environments isolate specific failure modes under synthetic interventions, a critical question is whether principled evidence admission scales to complex, real-world autonomous discovery and optimization. We evaluate on challenging autonomous research benchmarks across diverse domains: exploratory structure-activity relationship analysis, multi-step targeted optimization, automated tool verification, and hypothesis revision.
+\bibliography{iclr2027_conference}
+\bibliographystyle{iclr2027_conference}
 
-\paragraph{Cross-Harness Comparison.} 
-Table~\ref{tab:table6_autoresearch} benchmarks \method{} against state-of-the-art autonomous agent harnesses: Claude Code, Codex CLI, AI-Researcher~\citep{tang2025airesearcherautonomousscientificinnovation}, and ResearchHarness~\citep{schwarz2024researchharness}. \method{} achieves state-of-the-art performance across all primary efficacy metrics, reaching the highest Official Score ($0.418 \pm 0.028$) and Target Attainment ($0.386$). Crucially, while existing agents suffer a substantial drop between raw official score and externally verified score due to unverified hallucinated intermediates, \method{} maintains a Verified Score of $0.382$. Furthermore, \triage{} drastically suppresses Critical Failures down to $5.2\%$ (compared to $14.8\%$ for Claude Code and $26.2\%$ for ResearchHarness), ensuring that valid runs remain exceptionally high ($86.5\%$) with modest verification expenditure (\$0.92 per task).
+\newpage
+\appendix
+\onecolumn
 
-\begin{table}[t]
+\section{Evidence-Admission Hyperparameters and Sensitivity Analysis}
+\label{app:hyperparams}
+
+Table~\ref{tab:hyperparams} summarizes the default hyperparameter values for the \triage{} admission gate. All five parameters are fixed across all benchmark tasks and backbones without task-specific tuning.
+
+\begin{table}[!ht]
+\caption{Evidence-admission gate hyperparameters. All values are fixed across all experiments.}
+\label{tab:hyperparams}
 \centering
-\caption{\textbf{Performance on AutoResearchEval Optimization Tasks.} Comparison of \method{} against autonomous scientific and coding agent harnesses across benchmark tasks. Entries show empirical mean $\pm$ SD over independent seeds. Bold indicates the best result.}
+\small
+\begin{tabular}{llc}
+\toprule
+Constant & Role & Value \\
+\midrule
+$\tau_{\mathrm{anom}}$ & Residual threshold to open diagnostic state & 0.85 \\
+$\epsilon_{\mathrm{rep}}$ & Same-channel agreement tolerance & 0.12 \\
+$\epsilon_{\mathrm{ind}}$ & Cross-channel agreement tolerance & 0.12 \\
+$\tau_{\mathrm{gen}}$ & Held-out gain required to authorize a revision & 0.16 \\
+$k$ & Independent held-out records required for acceptance & 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.85\linewidth]{figures/fig_gate_sensitivity.pdf}
+    \caption{\textbf{Gate sensitivity analysis.} (a) Missed-mechanism rate as a joint function of the held-out gain threshold $\tau_{\mathrm{gen}}$ and held-out probe attenuation. The default operating point (circle) lies in the zero-error region, and the boundary moves monotonically with effective held-out gain. (b) Verification cost and missed-mechanism rate as a function of the anomaly threshold $\tau_{\mathrm{anom}}$; the default (dashed) lies on the flat zero-miss plateau before coverage collapses at more restrictive thresholds.}
+    \label{fig:gate-sensitivity}
+\end{figure}
+
+Figure~\ref{fig:gate-sensitivity} presents the two-dimensional sensitivity phase map across decision thresholds. The default held-out threshold ($\tau_{\mathrm{gen}}=0.16$) lies safely within the zero-error region, requiring over ${\sim}80\%$ signal attenuation before a true mechanism is mistakenly rejected.
+
+\section{Exploration Diversity (APD) and Exploitation Trajectories (AUOC)}
+\label{app:apd-auoc}
+
+Candidate exploration diversity (Average Pairwise Distance, APD) and cumulative exploitation throughput (Area Under the Optimization Curve, AUOC) across all three backbone LLMs are reported in Table~\ref{tab:main-apd-auoc} in the main text. Figure~\ref{fig:qwen-convergence} plots the task-specific best-so-far convergence trajectories under Qwen3-235B.
+
+
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.85\linewidth]{figures/fig_budget_pareto.pdf}
+    \caption{\textbf{Performance progression and cost-effectiveness trade-off.} (a) Solution Quality (SQ, \%) over budget $T \in [1, 24]$. (b) Cost-effectiveness trade-off: Solution Quality versus relative compute and token cost, defining the empirical efficiency frontier.}
+    \label{fig:budget-pareto}
+\end{figure}
+
+\section{Execution Latency and Wall-Clock Throughput Profiles}
+\label{app:runtime}
+
+Figure~\ref{fig:runtime} details wall-clock execution latency and scientific discovery throughput across all eight baselines under Qwen3-235B. \method{} requires only $134.5\mathrm{s}$ per run ($+13.6\%$ overhead over standard \pievo{}), avoiding the heavy latencies of multi-agent debate or tree search while achieving the highest exploitation throughput ($71.2\%$ AUOC).
+
+\begin{figure*}[!ht]
+    \centering
+    \includegraphics[width=\textwidth]{figures/fig_runtime.pdf}
+    \caption{\textbf{Execution runtime and discovery throughput across baselines.} (a) Mean wall-clock runtime per 24-step discovery run across all eight baselines under Qwen3-235B. \method{} incurs only $+13.6\%$ overhead over standard \pievo{} due to conditional anomaly-triggered verification, while remaining substantially faster than tree-search or multi-agent debate frameworks (AI Scientist v2, AI Researcher, PiFlow). (b) Scientific exploitation throughput: Exploitation Speed (AUOC, \%) versus mean runtime (seconds). \method{} achieves the peak discovery throughput, reaching the highest AUOC ($71.2\%$) at competitive execution latency.}
+    \label{fig:runtime}
+\end{figure*}
+
+\section{Cross-Harness Benchmarks and Triage as a Plug-in Module}
+\label{app:plugin}
+
+We evaluate on the optimization tasks from AutoResearchEval~\citep{fei2026autoresearcheval}, a 100-task benchmark spanning seven domains and the research lifecycle. Table~\ref{tab:table6_autoresearch} benchmarks \method{} against four autonomous agent harnesses: Claude Code, Codex CLI, AI-Researcher~\citep{tang2025airesearcherautonomousscientificinnovation}, and ResearchHarness. Among the compared systems, \method{} obtains the highest Official Score ($0.418 \pm 0.028$) and Target Attainment ($0.386$). While the comparison agents show a gap between raw official score and externally verified score, \method{} attains a Verified Score of $0.382$. It also reduces Critical Failures to $5.2\%$ (compared with $14.8\%$ for Claude Code and $26.2\%$ for ResearchHarness), with $86.5\%$ valid runs and a verification cost of \$0.92 per task.
+
+\begin{table}[!ht]
+\centering
+\caption{\textbf{Performance on AutoResearchEval Optimization Tasks.} Comparison of \method{} against autonomous scientific and coding agent harnesses across benchmark tasks. Official Score entries show empirical mean $\pm$ SD over independent seeds; the other columns report means. Bold indicates the best result.}
 \label{tab:table6_autoresearch}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{lcccccc}
@@ -460,11 +459,11 @@ ResearchHarness & 0.286 \textcolor{gray}{\scriptsize $\pm$ 0.045} & 0.241 & 0.23
 \end{table}
 
 \paragraph{Triage as a Plug-in Module.}
-To test whether the benefits of evidence admission are tied specifically to the \pievo{} candidate generator or represent a universal architectural enhancement, we instantiate \triage{} as an agnostic verification layer on top of three distinct existing harnesses (ResearchHarness, AI-Researcher, and Claude Code) in Table~\ref{tab:table7_plugin}, comparing Base execution, standard Self-Review prompting, and our + \triage{} gate. Across all host frameworks, adding \triage{} consistently achieves solid SOTA improvements: Verified Score increases by $+9.8\%$ on ResearchHarness, $+8.7\%$ on AI-Researcher, and $+9.7\%$ on Claude Code. Crucially, False Admission of spurious artifacts collapses by over $60\%$ across the board (dropping to $9.6\%$ on Claude Code), while Revision Accuracy rises to $78.2\%$, with only modest, predictable runtime overhead. These results confirm that evidence admission serves as a portable, plug-and-play reliability booster across diverse autonomous research agents.
+To test whether the benefits of evidence admission are tied specifically to the \pievo{} candidate generator or transfer across host architectures, Table~\ref{tab:table7_plugin} evaluates \triage{} as a verification layer on top of three harnesses (ResearchHarness, AI-Researcher, and Claude Code), comparing Base execution, standard Self-Review prompting, and our + \triage{} gate. Within this evaluation, adding \triage{} yields absolute Verified Score gains of $0.098$ on ResearchHarness, $0.087$ on AI-Researcher, and $0.097$ on Claude Code. False Admission of spurious artifacts decreases by more than $60\%$ relative to the corresponding Base variant for each harness (reaching $9.6\%$ on Claude Code), while Revision Accuracy reaches $78.2\%$, with additional token and runtime cost. These results support transfer of the evidence-admission mechanism across the three evaluated harnesses; they do not establish universality beyond this setting.
 
-\begin{table}[t]
+\begin{table}[!ht]
 \centering
-\caption{\textbf{\triage{} as a Plug-in across Autonomous Research Harnesses.} Incorporating \triage{} consistently enhances task score and verified reliability while drastically suppressing false evidence admissions across distinct host architectures.}
+\caption{\textbf{\triage{} as a Plug-in across Autonomous Research Harnesses.} Incorporating \triage{} enhances task score and verified reliability while reducing false evidence admissions across the three host architectures.}
 \label{tab:table7_plugin}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{llcccccc}
@@ -490,18 +489,16 @@ To test whether the benefits of evidence admission are tied specifically to the 
 }
 \end{table}
 
-\paragraph{Ablation of Evidence Admission Mechanisms.}
-Finally, Table~\ref{tab:table8_ablation} systematically evaluates each core component of the \triage{} admission policy: the confirmation threshold $k \in \{1, 2, 3\}$, held-out verification, channel reliability weighting, recursive backtracking upon retraction, and the assumption of same-source independence. 
-The findings demonstrate three key insights:
-First, the default threshold $k=2$ achieves the optimal performance; a permissive gate ($k=1$) allows false revisions to spike ($22.4\%$) and degrades verified score ($0.362$), while a strict gate ($k=3$) is overly conservative, missing genuine mechanisms (True Mechanism Recall drops to $71.8\%$) and elevating verification cost.
-Second, held-out verification and channel reliability are essential: removing held-out checks causes False Revision to surge to $34.5\%$ and Verified Score to collapse to $0.315$, while removing channel trust causes uncontrolled contamination from noisy tools.
-Third, naively treating repeated inquiries through the same channel as independent confirmation (``Same-Source Repeat = Independent'') triggers acute confirmation bias, causing False Revision to reach $45.8\%$ and Retraction Accuracy to drop to $42.1\%$. This provides direct empirical validation for our theoretical core: rigorous revision requires distinct, held-out evidence rather than recursive self-affirmation.
+\section{Systematic Ablation of Evidence Admission Mechanisms}
+\label{app:gate-ablation}
 
-\begin{table}[t]
+Table~\ref{tab:table8_ablation} evaluates each component of the \triage{} admission policy: the confirmation threshold $k \in \{1,2,3\}$, held-out verification, channel reliability tracking, recursive backtracking on retraction, and treating a same-source repeat as independent. Two comparisons carry the argument. Removing held-out verification raises false revision from $4.8\%$ to $34.5\%$, and treating a same-source repeat as independent raises it to $45.8\%$---both admit evidence that is reproducible but not transferable, which is the artifact case. Removing channel reliability raises false revision to $19.2\%$ through a different route: verification actions are then routed without regard to which channels have been reconcilable, so corroboration is sought from channels already in disagreement. The gate therefore depends on both the standard of proof and the choice of who supplies it.
+
+\begin{table}[!ht]
 \centering
 \caption{\textbf{Ablation of Evidence Admission Mechanisms.} Systematic evaluation of each architectural component in \triage{}. The full framework achieves the optimal balance between high mechanism recall, high verification accuracy, and low false revision risk.}
 \label{tab:table8_ablation}
-\resizebox{\linewidth}{!}{%
+\resizebox{0.9\linewidth}{!}{%
 \begin{tabular}{lccccc}
 \toprule
 \textbf{Variant} & \textbf{False Revision (\%)} $\downarrow$ & \textbf{True Mechanism Recall (\%)} $\uparrow$ & \textbf{Verified Score} $\uparrow$ & \textbf{Retraction Acc. (\%)} $\uparrow$ & \textbf{Verification Cost (\$)} $\downarrow$ \\
@@ -518,64 +515,64 @@ Same-Source Repeat = Independent & 45.8\% & 78.0\% & 0.265 & 42.1\% & 0.20 \\
 }
 \end{table}
 
-\section{Conclusion}
+\section{Algorithmic Specification of the TRIAGE Decision Protocol}
+\label{app:pseudocode}
 
-We studied a decision that becomes unavoidable once a scientific agent is allowed to revise its own principles: whether an unexpected observation is evidence about the world or evidence that the observation process itself should be questioned. \triage{} makes this choice explicit by keeping verification evidence separate from search history, tracking per-channel reliability, and requiring independent held-out support before a proposed principle is accepted. The integrated \method{} system preserves exploratory candidate generation while imposing this stronger evidence standard on persistent scientific state.
+Algorithm~\ref{alg:triage} formalizes the executable decision loop of the \triage{} evidence-admission gate.
 
-The experiments reveal a clean division of roles. Search expansion is primarily responsible for clean-task performance; evidence admission becomes decisive when feedback is corrupted, locally valid but non-generalizing, reversed by later evidence, or exploitable through a proxy. Across those controlled conditions, \triage{} blocks false admissions without collapsing to a reject-all policy. The sensitivity analysis further shows that the gate's operating point sits well within a stable, low-error region across a wide range of constant values.
+\begin{algorithm}[!ht]
+\caption{The \triage{} Evidence-Admission Protocol}
+\label{alg:triage}
+\begin{algorithmic}[1]
+\REQUIRE Candidate $x_t$, observed primary outcome $y_t$, primary prediction $\hat{y}_t$, primary channel $c$, active principles $\mathcal{P}_t$, threshold $\tau_{\mathrm{anom}}$, agreement tolerances $\epsilon_{\mathrm{rep}}, \epsilon_{\mathrm{ind}}$, held-out margin $\tau_{\mathrm{gen}}$, confirmation threshold $k=2$.
+\STATE Compute anomaly residual: $s_t \leftarrow |y_t - \hat{y}_t| / \sigma_t$.
+\IF{$s_t \le \tau_{\mathrm{anom}}$}
+    \STATE Admit $(x_t, y_t)$ to primary search history $\mathcal{H}_{\mathrm{search}}$; \textbf{return} $\mathcal{P}_t$.
+\ENDIF
+\STATE \COMMENT{Stage 1 --- same-channel repeat. Controls admission to search only.}
+\STATE $v_t^{c} \leftarrow \mathrm{Evaluate}(x_t, \texttt{repeat}, c)$ \COMMENT{same channel $c$ as the primary observation}
+\IF{$|y_t - v_t^{c}| \le \epsilon_{\mathrm{rep}}$}
+    \STATE $\alpha_c \leftarrow \alpha_c + 1$; admit $(x_t, y_t)$ to $\mathcal{H}_{\mathrm{search}}$ as search-active.
+\ELSE
+    \STATE $\beta_c \leftarrow \beta_c + 1$; substitute the verified median $y_t \leftarrow v_t^{c}$ and admit to $\mathcal{H}_{\mathrm{search}}$.
+    \STATE \textbf{return} $\mathcal{P}_t$ \COMMENT{unreconciled observation: no revision path}
+\ENDIF
+\STATE \COMMENT{A same-channel repeat never authorizes revision, however often it agrees:}
+\STATE \COMMENT{a reproducible artifact agrees with itself. Revision requires Stage 2.}
+\IF{a principle revision proposal $P$ is generated from $(x_t,y_t)$}
+    \STATE \COMMENT{Stage 2a --- cross-channel check against a distinct channel}
+    \STATE Select verifier channel $c' \leftarrow \arg\max_{c'' \neq c} p_{c''}^{\mathrm{trust}}$ among declared independent channels.
+    \STATE $v_t^{c'} \leftarrow \mathrm{Evaluate}(x_t, \texttt{cross-channel}, c')$
+    \IF{$|v_t^{c} - v_t^{c'}| > \epsilon_{\mathrm{ind}}$}
+        \STATE $\beta_{c} \leftarrow \beta_{c} + 1$; \textbf{return} $\mathcal{P}_t$ \COMMENT{channels disagree: source unresolved}
+    \ENDIF
+    \STATE $\alpha_{c} \leftarrow \alpha_{c} + 1$; set state of $P$ to \textsc{Provisional}.
+    \STATE \COMMENT{Stage 2b --- held-out generalization, the only admitting test}
+    \STATE Draw $X_{\mathrm{heldout}} \sim \mathcal{D}_{\mathrm{heldout}}$ with $X_{\mathrm{heldout}} \cap \mathcal{H}_{\mathrm{search}} = \emptyset$, fixed before the run.
+    \STATE $E(P) \leftarrow \{e = (x',y') : x' \in X_{\mathrm{heldout}},\ e.\mathrm{ind} = \textsc{true}\}$, with each stance set by the $\tau_{\mathrm{gen}}$ margin of §\ref{sec:methodology}.
+    \IF{$\exists\, e \in E(P)$ with $\mathrm{contradict}(e,P) = 1$}
+        \STATE Set state of $P$ to \textsc{Retracted}; recursively retract every principle listing $P$ as parent.
+    \ELSIF{$|\{e \in E(P) : e.\mathrm{ind} \wedge e.\mathrm{heldout} \wedge \mathrm{support}(e,P)\}| \ge k$}
+        \STATE Set state of $P$ to \textsc{Accepted}; $\mathcal{P}_{t+1} \leftarrow \mathcal{P}_t \cup \{P\}$.
+    \ELSE
+        \STATE Leave $P$ \textsc{Provisional} \COMMENT{support below $k$: search continues, state unchanged}
+    \ENDIF
+\ENDIF
+\STATE \textbf{return} $\mathcal{P}_{t+1}$.
+\end{algorithmic}
+\end{algorithm}
 
-The central conclusion is therefore narrower and more durable than a score-improvement claim: exploratory search and persistent scientific revision require different standards of evidence, and maintaining that distinction prevents a common failure mode in which a useful but unreliable observation corrupts trusted scientific state.
+\section{Extended Benchmark Protocols and Failure Metric Definitions}
+\label{app:protocol}
 
-\subsection*{AI use statement}
-
-(This section is \textbf{required} and does not count toward the page limit.)
-
-In this work, we used generative AI tools for [tasks with required disclosure].
-We have not used generative AI tools for [other tasks with required disclosure],
-and [the rest of the required disclosure tasks] are not applicable to this work.
-Additionally, we used generative AI tools for [tasks with recommended
-disclosure]. We have reviewed all AI-assisted work. [Elaborate. For example, “we
-checked LLM-generated research ideas for potential plagiarism through a manual
-literature survey”, “LLM-generated code was verified and tested for correctness
-by 2 authors”, etc.]. We take responsibility for the final content of this work,
-including text, claims or artifacts produced with the aid of generative AI.
-
-See the ICLR 2027 AI Policy for Authors for more details. This statement should
-not be more than 1 page.
-
-\subsection*{Ethics statement}
-
-(This section is \textbf{recommended} and does not count toward the page limit.)
-
-If authors feel that their paper submission raises questions regarding the Code
-of Ethics, they are encouraged to include a paragraph of Ethics Statement (at
-the end of the main text before references) to address potential concerns where
-appropriate. Topics include, but are not limited to, studies that involve human
-subjects, practices to data set releases, potentially harmful insights,
-methodologies and applications, potential conflicts of interest and sponsorship,
-discrimination/bias/fairness concerns, privacy and security issues, legal
-compliance, and research integrity issues (e.g., IRB, documentation, research
-ethics). This statement should not be more than 1 page.
-
-\subsection*{Reproducibility statement}
-
-(This section is \textbf{recommended} and does not count toward the page limit.)
-
-It is important that the work published in ICLR is reproducible. Authors are
-strongly encouraged to include a paragraph-long Reproducibility Statement at the
-end of the main text (before references) to discuss the efforts that have been
-made to ensure reproducibility. This paragraph should not itself describe
-details needed for reproducing the results, but rather reference the parts of
-the main paper, appendix, and supplemental materials that will help with
-reproducibility. For example, for novel models or algorithms, a link to an
-anonymous downloadable source code can be submitted as supplementary materials;
-for theoretical results, clear explanations of any assumptions and a complete
-proof of the claims can be included in the appendix; for any datasets used in
-the experiments, a complete description of the data processing steps can be
-provided in the supplementary materials. Each of the above are examples of
-things that can be referenced in the reproducibility statement.
-
-\bibliography{iclr2027_conference}
-\bibliographystyle{iclr2027_conference}
+\paragraph{AutoResearchEval Benchmark.} AutoResearchEval~\citep{fei2026autoresearcheval} evaluates multi-step targeted optimization across molecular properties, material bandgaps, and algorithmic code generation. Each harness is run across 5 independent seeds with an identical per-task monetary cap (\$2.00) and time budget.
+\paragraph{Failure Metric Definitions.}
+\begin{itemize}[nosep, leftmargin=12pt]
+  \item \textbf{Official Score:} Raw target optimization metric reported by the host framework upon run termination.
+  \item \textbf{Target Attainment:} Binary indicator indicating whether the best discovered candidate achieves $\ge 90\%$ of the task-specific global target optimum.
+  \item \textbf{Verified Score:} Score evaluated independently by an external, sandboxed ground-truth testbed.
+  \item \textbf{Valid Runs (\%):} Percentage of runs that complete all execution rounds without unhandled runtime crashes, tool timeouts, or syntax failure.
+  \item \textbf{Critical Failure (\%):} Percentage of runs in which unverified, hallucinated tool outputs or corrupted feedback poisoned the agent's internal memory, leading to permanent loop collapse or degenerate repeating actions.
+\end{itemize}
 
 \end{document}
