@@ -1,0 +1,1153 @@
+{
+  "schema_version": "gate_sensitivity.v1",
+  "benchmark": "active_principle_discovery_benchmark",
+  "policy": "active_gated",
+  "budget": 24,
+  "seeds": [
+    0,
+    1
+  ],
+  "trials_per_grid_point": 12,
+  "defaults": {
+    "ANOMALY_THRESHOLD": 0.85,
+    "REPEAT_TOLERANCE": 0.12,
+    "INDEPENDENT_TOLERANCE": 0.12,
+    "HELDOUT_GAIN_THRESHOLD": 0.16
+  },
+  "true_mechanism_heldout_gain": 0.45,
+  "constant_sweeps": {
+    "ANOMALY_THRESHOLD": {
+      "default": 0.85,
+      "points": [
+        {
+          "value": 0.5,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.65,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.75,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.85,
+          "is_default": true,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.9,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.95,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 1.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 6.333333333333333,
+            "sem": 1.72034762754391
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.75,
+            "sem": 0.1305582419667734
+          }
+        },
+        {
+          "value": 0.99,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 1.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        }
+      ]
+    },
+    "REPEAT_TOLERANCE": {
+      "default": 0.12,
+      "points": [
+        {
+          "value": 0.02,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.06,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.12,
+          "is_default": true,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.2,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.3,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.45,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.833333333333334,
+            "sem": 2.2355032425551853
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        }
+      ]
+    },
+    "INDEPENDENT_TOLERANCE": {
+      "default": 0.12,
+      "points": [
+        {
+          "value": 0.02,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.5,
+            "sem": 0.5
+          },
+          "verification_cost": {
+            "mean": 9.833333333333334,
+            "sem": 2.1631673373303624
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.75,
+            "sem": 0.1305582419667734
+          }
+        },
+        {
+          "value": 0.06,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.12,
+          "is_default": true,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.2,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.3,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.45,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 11.166666666666666,
+            "sem": 2.298989677087206
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        }
+      ]
+    },
+    "HELDOUT_GAIN_THRESHOLD": {
+      "default": 0.16,
+      "points": [
+        {
+          "value": 0.02,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.08,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.16,
+          "is_default": true,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.25,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.35,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.44,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        },
+        {
+          "value": 0.5,
+          "is_default": false,
+          "false_expansion_rate": {
+            "n": 6,
+            "mean": 0.0,
+            "sem": 0.0
+          },
+          "missed_mechanism_rate": {
+            "n": 2,
+            "mean": 1.0,
+            "sem": 0.0
+          },
+          "verification_cost": {
+            "mean": 10.5,
+            "sem": 2.3208540747672264
+          },
+          "final_state_accuracy": {
+            "n": 12,
+            "mean": 0.8333333333333334,
+            "sem": 0.11236664374387369
+          }
+        }
+      ]
+    }
+  },
+  "heldout_misspecification": {
+    "points": [
+      {
+        "heldout_attenuation": 0.0,
+        "false_expansion_rate": {
+          "n": 6,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "missed_mechanism_rate": {
+          "n": 2,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "verification_cost": {
+          "mean": 10.5,
+          "sem": 2.3208540747672264
+        },
+        "final_state_accuracy": {
+          "n": 12,
+          "mean": 0.8333333333333334,
+          "sem": 0.11236664374387369
+        }
+      },
+      {
+        "heldout_attenuation": 0.2,
+        "false_expansion_rate": {
+          "n": 6,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "missed_mechanism_rate": {
+          "n": 2,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "verification_cost": {
+          "mean": 10.5,
+          "sem": 2.3208540747672264
+        },
+        "final_state_accuracy": {
+          "n": 12,
+          "mean": 0.8333333333333334,
+          "sem": 0.11236664374387369
+        }
+      },
+      {
+        "heldout_attenuation": 0.4,
+        "false_expansion_rate": {
+          "n": 6,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "missed_mechanism_rate": {
+          "n": 2,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "verification_cost": {
+          "mean": 10.5,
+          "sem": 2.3208540747672264
+        },
+        "final_state_accuracy": {
+          "n": 12,
+          "mean": 0.8333333333333334,
+          "sem": 0.11236664374387369
+        }
+      },
+      {
+        "heldout_attenuation": 0.6,
+        "false_expansion_rate": {
+          "n": 6,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "missed_mechanism_rate": {
+          "n": 2,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "verification_cost": {
+          "mean": 10.5,
+          "sem": 2.3208540747672264
+        },
+        "final_state_accuracy": {
+          "n": 12,
+          "mean": 0.8333333333333334,
+          "sem": 0.11236664374387369
+        }
+      },
+      {
+        "heldout_attenuation": 0.8,
+        "false_expansion_rate": {
+          "n": 6,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "missed_mechanism_rate": {
+          "n": 2,
+          "mean": 1.0,
+          "sem": 0.0
+        },
+        "verification_cost": {
+          "mean": 10.5,
+          "sem": 2.3208540747672264
+        },
+        "final_state_accuracy": {
+          "n": 12,
+          "mean": 0.8333333333333334,
+          "sem": 0.11236664374387369
+        }
+      },
+      {
+        "heldout_attenuation": 0.9,
+        "false_expansion_rate": {
+          "n": 6,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "missed_mechanism_rate": {
+          "n": 2,
+          "mean": 1.0,
+          "sem": 0.0
+        },
+        "verification_cost": {
+          "mean": 10.5,
+          "sem": 2.3208540747672264
+        },
+        "final_state_accuracy": {
+          "n": 12,
+          "mean": 0.8333333333333334,
+          "sem": 0.11236664374387369
+        }
+      },
+      {
+        "heldout_attenuation": 1.0,
+        "false_expansion_rate": {
+          "n": 6,
+          "mean": 0.0,
+          "sem": 0.0
+        },
+        "missed_mechanism_rate": {
+          "n": 2,
+          "mean": 1.0,
+          "sem": 0.0
+        },
+        "verification_cost": {
+          "mean": 10.5,
+          "sem": 2.3208540747672264
+        },
+        "final_state_accuracy": {
+          "n": 12,
+          "mean": 0.8333333333333334,
+          "sem": 0.11236664374387369
+        }
+      }
+    ]
+  },
+  "phase_map": {
+    "thresholds": [
+      0.02,
+      0.08,
+      0.16,
+      0.25,
+      0.35,
+      0.44,
+      0.5
+    ],
+    "attenuations": [
+      0.0,
+      0.2,
+      0.4,
+      0.6,
+      0.8,
+      1.0
+    ],
+    "cells": [
+      {
+        "heldout_gain_threshold": 0.02,
+        "heldout_attenuation": 0.0,
+        "effective_true_gain": 0.45,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.08,
+        "heldout_attenuation": 0.0,
+        "effective_true_gain": 0.45,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.16,
+        "heldout_attenuation": 0.0,
+        "effective_true_gain": 0.45,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.25,
+        "heldout_attenuation": 0.0,
+        "effective_true_gain": 0.45,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.35,
+        "heldout_attenuation": 0.0,
+        "effective_true_gain": 0.45,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.44,
+        "heldout_attenuation": 0.0,
+        "effective_true_gain": 0.45,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.5,
+        "heldout_attenuation": 0.0,
+        "effective_true_gain": 0.45,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.02,
+        "heldout_attenuation": 0.2,
+        "effective_true_gain": 0.36000000000000004,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.08,
+        "heldout_attenuation": 0.2,
+        "effective_true_gain": 0.36000000000000004,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.16,
+        "heldout_attenuation": 0.2,
+        "effective_true_gain": 0.36000000000000004,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.25,
+        "heldout_attenuation": 0.2,
+        "effective_true_gain": 0.36000000000000004,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.35,
+        "heldout_attenuation": 0.2,
+        "effective_true_gain": 0.36000000000000004,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.44,
+        "heldout_attenuation": 0.2,
+        "effective_true_gain": 0.36000000000000004,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.5,
+        "heldout_attenuation": 0.2,
+        "effective_true_gain": 0.36000000000000004,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.02,
+        "heldout_attenuation": 0.4,
+        "effective_true_gain": 0.27,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.08,
+        "heldout_attenuation": 0.4,
+        "effective_true_gain": 0.27,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.16,
+        "heldout_attenuation": 0.4,
+        "effective_true_gain": 0.27,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.25,
+        "heldout_attenuation": 0.4,
+        "effective_true_gain": 0.27,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.35,
+        "heldout_attenuation": 0.4,
+        "effective_true_gain": 0.27,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.44,
+        "heldout_attenuation": 0.4,
+        "effective_true_gain": 0.27,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.5,
+        "heldout_attenuation": 0.4,
+        "effective_true_gain": 0.27,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.02,
+        "heldout_attenuation": 0.6,
+        "effective_true_gain": 0.18000000000000002,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.08,
+        "heldout_attenuation": 0.6,
+        "effective_true_gain": 0.18000000000000002,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.16,
+        "heldout_attenuation": 0.6,
+        "effective_true_gain": 0.18000000000000002,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.25,
+        "heldout_attenuation": 0.6,
+        "effective_true_gain": 0.18000000000000002,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.35,
+        "heldout_attenuation": 0.6,
+        "effective_true_gain": 0.18000000000000002,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.44,
+        "heldout_attenuation": 0.6,
+        "effective_true_gain": 0.18000000000000002,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.5,
+        "heldout_attenuation": 0.6,
+        "effective_true_gain": 0.18000000000000002,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.02,
+        "heldout_attenuation": 0.8,
+        "effective_true_gain": 0.08999999999999998,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.08,
+        "heldout_attenuation": 0.8,
+        "effective_true_gain": 0.08999999999999998,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 0.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.16,
+        "heldout_attenuation": 0.8,
+        "effective_true_gain": 0.08999999999999998,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.25,
+        "heldout_attenuation": 0.8,
+        "effective_true_gain": 0.08999999999999998,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.35,
+        "heldout_attenuation": 0.8,
+        "effective_true_gain": 0.08999999999999998,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.44,
+        "heldout_attenuation": 0.8,
+        "effective_true_gain": 0.08999999999999998,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.5,
+        "heldout_attenuation": 0.8,
+        "effective_true_gain": 0.08999999999999998,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.02,
+        "heldout_attenuation": 1.0,
+        "effective_true_gain": 0.0,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.08,
+        "heldout_attenuation": 1.0,
+        "effective_true_gain": 0.0,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.16,
+        "heldout_attenuation": 1.0,
+        "effective_true_gain": 0.0,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.25,
+        "heldout_attenuation": 1.0,
+        "effective_true_gain": 0.0,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.35,
+        "heldout_attenuation": 1.0,
+        "effective_true_gain": 0.0,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.44,
+        "heldout_attenuation": 1.0,
+        "effective_true_gain": 0.0,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      },
+      {
+        "heldout_gain_threshold": 0.5,
+        "heldout_attenuation": 1.0,
+        "effective_true_gain": 0.0,
+        "false_expansion_rate": 0.0,
+        "missed_mechanism_rate": 1.0,
+        "verification_cost": 10.5
+      }
+    ]
+  }
+}
