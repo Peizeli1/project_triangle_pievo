@@ -1,0 +1,33 @@
+task: |
+  Superconductor Optimization (SPO)
+
+  Find a stoichiometric chemical formula with the highest predicted critical
+  temperature (Tc), measured in Kelvin. The candidate must contain only
+  element symbols and numeric ratios and must belong to one of the six allowed
+  Cu-O systems below:
+    - La-Sr-Cu-O
+    - La-Ba-Cu-O
+    - Y-Ba-Cu-O
+    - Bi-Sr-Ca-Cu-O
+    - Tl-Ba-Ca-Cu-O
+    - Hg-Ba-Ca-Cu-O
+
+  The candidate passed to the experiment tool must be one exact formula string
+  with no environmental conditions, layer labels, plus signs, or explanatory
+  text. The tool returns the official PiFlow surrogate prediction and that
+  numeric value is the only observation to record.
+
+  [Objective]
+    Maximize Tc and approach the PiEvo reference value of 298.5 K.
+
+  [Last record]
+    Candidate: Y1Ba2Cu3O7
+    Tc: 90.0 K (illustrative starting record only)
+
+environment:
+  UTIL_LLM_CONFIG_BASE_URL: "https://zjuapi.com/v1"
+  UTIL_LLM_CONFIG_NAME: "qwen3-235b-a22b-instruct-2507"
+  UTIL_LLM_CONFIG_API_KEY: "${ZJU_TASK_API_KEY}"
+  UTIL_LLM_CONFIG_TEMPERATURE: "0.6"
+  UTIL_LLM_CONFIG_MAX_TOKENS: "4096"
+  PIEVO_OFFICIAL_PIFLOW_REPO: "/Users/michael/Documents/ai4ai/official_sources/PiFlow"

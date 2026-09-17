@@ -1,0 +1,35 @@
+{
+  "schema_version": "g7_performance_policy_amendment.v1",
+  "amendment_id": "aggregate_mean_v1",
+  "status": "defined_for_future_runs; freeze_before_new_formal_run",
+  "amends_protocol_freeze": {
+    "path": "/Users/michael/Documents/ai4ai/experiments/results/matched_qwen235b_protocol_freeze_afe_v8.json",
+    "sha256": "b165a5af8769c8c3ddc91abd234b34955a2fe71e9d5e1516f698500a4d8a0113"
+  },
+  "scope": "performance comparison only; integrity and cost requirements remain unchanged",
+  "removed_hard_stop": "per_seed_sq_noninferiority_3_percent",
+  "performance_policy": {
+    "primary_metric": "mean SQ across three independent seeds",
+    "primary_pass": "RADP mean SQ strictly exceeds matched PiEvo mean SQ",
+    "secondary_metric": "mean AUOC across three independent seeds",
+    "secondary_pass": "RADP mean AUOC is not lower than matched PiEvo mean AUOC",
+    "reporting": "mean +/- standard deviation for each method and metric, plus paired seed differences",
+    "per_seed_results": "reported diagnostically, not a hard stop"
+  },
+  "retained_hard_constraints": [
+    "complete primary budget per cell",
+    "contiguous evaluator audit",
+    "valid seed application proof",
+    "token ceiling and wall-clock ledger",
+    "invalid and duplicate accounting",
+    "no label or test leakage",
+    "failed attempts retained and never spliced"
+  ],
+  "current_g7_interpretation": {
+    "aggregate_mean_v1": "passes on the existing 3-seed MBO reduction",
+    "original_frozen_gate": "fails because seed1 SQ falls by 22.01%",
+    "rerun_required_for_current_mbo_artifacts": false,
+    "post_hoc_boundary": "the amended reduction is not a preregistered pass of the original frozen G7 gate"
+  },
+  "future_use": "freeze this amendment and its hashes before any new formal matrix or G8 run"
+}

@@ -1,0 +1,74 @@
+task: |
+  Transition Metal Complex Optimization (TMC)
+
+  Select exactly four ligand IDs from the released 50-ligand pool to form a
+  neutral Pd(II) complex. The candidate string must have this exact form:
+    Pd_L1_L2_L3_L4
+  Each ligand ID must be copied exactly from the pool below. The four ligand
+  charges must sum to -2. The objective is to maximize predicted electronic
+  polarizability. The experiment tool returns the only numeric observation.
+
+  [Released ligand pool]
+    - RUCBEY-subgraph-1 (charge 0, Pyridine-like)
+    - WECJIA-subgraph-3 (charge 0, Phosphine)
+    - KEYRUB-subgraph-1 (charge 0, Nitrile/Cyano)
+    - NURKEQ-subgraph-2 (charge 0, Carbene/Bulky)
+    - MEBXUN-subgraph-1 (charge 0, Oxygen-donor)
+    - BIFMOV-subgraph-1 (charge 0, Pyridine-like)
+    - CUJYEL-subgraph-2 (charge 0, Phosphine)
+    - EZEXEM-subgraph-1 (charge 0, Pyridine-like)
+    - FOMVUB-subgraph-2 (charge 0, Pyridine-like)
+    - EFIHEJ-subgraph-3 (charge 0, Carbene/Bulky)
+    - LETTEL-subgraph-1 (charge 0, Neutral)
+    - KAKKIR-subgraph-3 (charge 0, Pyridine-like)
+    - BICRIQ-subgraph-3 (charge 0, Carbene/Bulky)
+    - UPEGAZ-subgraph-2 (charge 0, Thio/Sulfur)
+    - CEVJAP-subgraph-2 (charge 0, Amine/Amido)
+    - BABTUT-subgraph-3 (charge 0, Pyridine-like)
+    - ZEJJEF-subgraph-3 (charge 0, Amine/Amido)
+    - KULGAZ-subgraph-2 (charge 0, Pyridine-like)
+    - CIGDAA-subgraph-1 (charge 0, Carbene)
+    - HOVMIP-subgraph-3 (charge 0, Amine/Amido)
+    - ULUSIE-subgraph-1 (charge 0, Amine/Amido)
+    - IBEKUV-subgraph-1 (charge 0, Thio/Sulfur)
+    - REQSUD-subgraph-2 (charge 0, Oxygen-donor)
+    - BOSJIF-subgraph-1 (charge 0, Amine/Amido)
+    - GUVMEP-subgraph-0 (charge 0, Pyridine-like)
+    - MAZJIJ-subgraph-0 (charge -1, Halide)
+    - OBONEA-subgraph-1 (charge -1, Halide)
+    - CORTOU-subgraph-2 (charge -1, Halide)
+    - LEVGUO-subgraph-2 (charge -1, Anionic)
+    - REBWEB-subgraph-2 (charge -1, Carbene/Bulky)
+    - DOGPAS-subgraph-1 (charge -1, Carbene)
+    - IJIMIX-subgraph-1 (charge -1, Oxygen-donor)
+    - PEJGAN-subgraph-1 (charge -1, Amine/Amido)
+    - BIFZEX-subgraph-0 (charge -1, Amine/Amido/Bulky)
+    - IRIXUC-subgraph-3 (charge -1, Carbene)
+    - SAYGOO-subgraph-0 (charge -1, Thio/Sulfur)
+    - UROGIS-subgraph-1 (charge -1, Halide)
+    - MAQKEX-subgraph-1 (charge -1, Carbene)
+    - LUQWUQ-subgraph-1 (charge -1, Amine/Amido)
+    - QAYDID-subgraph-2 (charge -1, Carbene)
+    - MOYDOV-subgraph-3 (charge -1, Amine/Amido/Bulky)
+    - NIZQUK-subgraph-1 (charge -1, Carbene/Bulky)
+    - SAYHIJ-subgraph-1 (charge -1, Nitrile/Cyano)
+    - CIQGOY-subgraph-0 (charge -1, Carbene)
+    - VUFZUT-subgraph-1 (charge -1, Thio/Sulfur)
+    - ZOQFIU-subgraph-0 (charge -1, Oxygen-donor)
+    - GUQBUQ-subgraph-0 (charge -1, Thio/Sulfur/Bulky)
+    - LEZYUM-subgraph-2 (charge -1, Carbene/Bulky)
+    - RAJXUX-subgraph-2 (charge -1, Amine/Amido/Bulky)
+    - QEWZOH-subgraph-3 (charge -1, Carbene/Bulky)
+
+  [Objective]
+    Maximize polarizability and approach the theoretical reference 493.8.
+
+environment:
+  UTIL_LLM_CONFIG_BASE_URL: "https://zjuapi.com/v1"
+  UTIL_LLM_CONFIG_NAME: "qwen3-235b-a22b-instruct-2507"
+  UTIL_LLM_CONFIG_API_KEY: "${ZJU_TASK_API_KEY}"
+  UTIL_LLM_CONFIG_TEMPERATURE: "0.6"
+  UTIL_LLM_CONFIG_MAX_TOKENS: "4096"
+  PIEVO_MAX_PRIMARY_EVALS: "${PIEVO_MAX_PRIMARY_EVALS:-24}"
+  PIEVO_SEED: "${PIEVO_SEED:-0}"
+  PIEVO_TMC_REFERENCE: "493.8"

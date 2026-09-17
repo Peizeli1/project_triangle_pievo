@@ -1,0 +1,20 @@
+{
+  "schema_version": "controlled_qwen235b_table1_protocol.v1",
+  "track": "controlled_qwen235b_table1_v1",
+  "model": "qwen3-235b-a22b-instruct-2507",
+  "base_url": "https://zjuapi.com/v1",
+  "temperature": 0.6,
+  "max_tokens": 4096,
+  "top_p": 0.8,
+  "top_k": 20,
+  "presence_penalty": 1.5,
+  "repetition_penalty": 1.0,
+  "enable_thinking": false,
+  "context_messages": 10,
+  "primary_budget_per_cell": 24,
+  "seeds": [0, 1, 2],
+  "max_total_tokens_per_cell": 350000,
+  "evaluator": "released_local_pievo_piflow_evaluator",
+  "candidate_policy": "method-specific proposal logic with shared final parser and evaluator accounting",
+  "claim_boundary": "Controlled Qwen3-235B matched released-evaluator comparison; not exact paper reproduction or universal external SOTA."
+}

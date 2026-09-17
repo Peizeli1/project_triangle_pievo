@@ -1,0 +1,33 @@
+task: |
+  Nanohelix Optical Function Optimization (NHO)
+
+  Find a seven-parameter nanohelix and optical-condition candidate that
+  maximizes the predicted optical chirality g-factor. The candidate must be
+  one comma-separated string with exactly these key=value fields:
+    fiber_radius, helix_radius, n_turns, pitch, wavelength, x_y_z, direction
+
+  Bounds and types are fixed:
+    - fiber_radius: continuous [20, 60]
+    - helix_radius: continuous [20, 90]
+    - n_turns: continuous [3, 10]
+    - pitch: continuous [60, 200]
+    - wavelength: continuous [400, 800]
+    - x_y_z: integer in {0, 1, 2}
+    - direction: integer in {0, 1}
+
+  The experiment tool accepts only one exact candidate string. Do not add
+  prose, units, a molecule/material name, or an invented numeric outcome.
+  Record only the numeric value returned by evaluate_nanohelix.
+
+  [Objective]
+    Maximize g-factor and approach the theoretical reference value 2.0.
+
+environment:
+  UTIL_LLM_CONFIG_BASE_URL: "https://zjuapi.com/v1"
+  UTIL_LLM_CONFIG_NAME: "qwen3-235b-a22b-instruct-2507"
+  UTIL_LLM_CONFIG_API_KEY: "${ZJU_TASK_API_KEY}"
+  UTIL_LLM_CONFIG_TEMPERATURE: "0.6"
+  UTIL_LLM_CONFIG_MAX_TOKENS: "4096"
+  PIEVO_MAX_PRIMARY_EVALS: "${PIEVO_MAX_PRIMARY_EVALS:-24}"
+  PIEVO_SEED: "${PIEVO_SEED:-0}"
+  PIEVO_NHO_REFERENCE: "2.0"

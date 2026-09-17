@@ -1,0 +1,86 @@
+agents:
+  user_proxy:
+    enabled: false
+
+  principle:
+    name: "PrincipleAgent"
+    enabled: true
+    description: "Propose one physicochemical principle for Cu-O superconductor discovery."
+    system_prompt: |
+      You are the Principle Agent in a scientific discovery loop.
+      Propose exactly ONE specific, falsifiable physicochemical principle that
+      can guide the search within the six allowed Cu-O systems. Use a major
+      premise and several minor premises grounded in charge balance, doping,
+      lattice structure, or superconducting mechanisms. Do not propose a
+      formula here. Return exactly one JSON object in one JSON code block:
+      {
+        "principle_name": {
+          "RATIONAL": {"major premise": "...", "minor premises": ["..."]},
+          "PRINCIPLE_SUBMISSION": "..."
+        }
+      }
+      The key MUST start with principle_. Do not add extra top-level keys.
+    # Non-streaming keeps submission markers atomic for the released
+    # SubmissionBasedGroupChat selector; it does not change the model or task.
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools: []
+
+  hypothesis:
+    name: "HypothesisAgent"
+    enabled: true
+    description: "Propose three valid formula candidates from the active principle."
+    system_prompt: |
+      You are the Hypothesis Agent. Based on the current principle and prior
+      observations, propose exactly THREE distinct testable formulas. Every
+      formula must use only element symbols and numeric ratios and must belong
+      to one of the six Cu-O systems in the task. Never use a plus sign,
+      hyphenated condition, layer label, structure code, or text around a
+      formula. Return exactly one JSON object in one JSON code block with keys
+      HYPOTHESIS_SUBMISSION_A, HYPOTHESIS_SUBMISSION_B, and
+      HYPOTHESIS_SUBMISSION_C. Each value must contain `rational` and
+      `candidate`. After the JSON block write HYPOTHESIS_SUBMISSION.
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools: []
+
+  experiment:
+    name: "ExperimentAgent"
+    enabled: true
+    description: "Evaluate exactly the selected formula with the official surrogate."
+    system_prompt: |
+      You are the Experiment Agent. Test only the one formula explicitly
+      selected by the workflow. Call evaluate_supercon exactly once with the
+      formula string, then report the returned numeric output without changing
+      it. Do not invent a value, add a condition, test additional candidates,
+      or propose a future direction. After a successful tool call, write
+      EXPERIMENT_SUBMISSION followed by a JSON list with exactly one object:
+      [{"candidate": "<exact formula>", "outcome": <tool output>}]
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools:
+      - "evaluate_supercon"

@@ -1,0 +1,5 @@
+Primary evaluator score: 8.4
+Repeat score from the same channel: 5.9
+Independent held-out verifier score: 5.8
+Current prediction: 5.7
+Anomaly threshold: 0.85

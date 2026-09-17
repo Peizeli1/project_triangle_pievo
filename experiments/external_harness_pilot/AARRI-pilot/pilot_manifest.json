@@ -1,0 +1,126 @@
+{
+  "upstream_commit": "6b0d231eb0d2e9b5f10b1cc225bf61fba3cf5ed2",
+  "selected_tasks": [
+    "baseline-inflation-detector",
+    "benchmark-split-ambiguity",
+    "silent-eval-contamination",
+    "log-buried-admission",
+    "dead-end-recognition",
+    "unfair-baseline-sabotage"
+  ],
+  "infrastructure_patch": "Only task-copy Dockerfiles are changed to preinstall tmux for Harbor Terminus-2. Instructions, task metadata, verifier tests, solutions, and task data remain byte-identical to upstream.",
+  "files": {
+    "baseline-inflation-detector": {
+      "protected_hashes_before": {
+        "instruction.md": "9cedcc5d45ccc3545bdc442168f928ea4587c2921b920de838ffb5d5fa91ad46",
+        "task.toml": "becb3dd64a741d316408b8562bd31d35d695479cd8514d2b509c47c53f44babe",
+        "tests/context_paper1.txt": "06b0502bfa2a66f13d2a556e9fab350c8f6208af8e7eb9df5cf223f95aeec57a",
+        "tests/context_paper2.txt": "1d6330f6267fb6e884d42541b6702efa261e979732c0f50a7671caee9f951eb3",
+        "tests/paper.txt": "7e2877c19b2efa6f25d44eb884b63c29dfc5e3730dd5e8bd373963517f0ee1ce",
+        "tests/test.sh": "3b2c81ce09aec33bb08dcd83355e68f2dde4f0a332ffc3a16d169e1ae75f4e05",
+        "tests/test_outputs.py": "39eff6aabf452d23448b8fb9b2569fc6cc13e918e5ab7041b689cf19ba6eda93"
+      },
+      "protected_hashes_after": {
+        "instruction.md": "9cedcc5d45ccc3545bdc442168f928ea4587c2921b920de838ffb5d5fa91ad46",
+        "task.toml": "becb3dd64a741d316408b8562bd31d35d695479cd8514d2b509c47c53f44babe",
+        "tests/context_paper1.txt": "06b0502bfa2a66f13d2a556e9fab350c8f6208af8e7eb9df5cf223f95aeec57a",
+        "tests/context_paper2.txt": "1d6330f6267fb6e884d42541b6702efa261e979732c0f50a7671caee9f951eb3",
+        "tests/paper.txt": "7e2877c19b2efa6f25d44eb884b63c29dfc5e3730dd5e8bd373963517f0ee1ce",
+        "tests/test.sh": "3b2c81ce09aec33bb08dcd83355e68f2dde4f0a332ffc3a16d169e1ae75f4e05",
+        "tests/test_outputs.py": "39eff6aabf452d23448b8fb9b2569fc6cc13e918e5ab7041b689cf19ba6eda93"
+      },
+      "protected_identical": true,
+      "dockerfile_sha256": "6c7da00caf75d39dd6c376ab43d28c8139b4f1c393514f461115cb6270ebda29"
+    },
+    "benchmark-split-ambiguity": {
+      "protected_hashes_before": {
+        "instruction.md": "af41dd5eac9e1010d9b6d4d48b19363f9ab85da8110bb39436c420c973344bff",
+        "task.toml": "7b1e94ba62b1ac7ded7a39552c440b7e8b4ab28cc84ccbe18af7e729849be17e",
+        "tests/test.sh": "d3ccd207f3897b6170df0bee941ac60106cafb3d5c9e2dd229da088644d5ef93",
+        "tests/test_outputs.py": "a22c9eca91fca439853edd76756e6b77d102b2e460e4781c4a3b6deb4e4b2786"
+      },
+      "protected_hashes_after": {
+        "instruction.md": "af41dd5eac9e1010d9b6d4d48b19363f9ab85da8110bb39436c420c973344bff",
+        "task.toml": "7b1e94ba62b1ac7ded7a39552c440b7e8b4ab28cc84ccbe18af7e729849be17e",
+        "tests/test.sh": "d3ccd207f3897b6170df0bee941ac60106cafb3d5c9e2dd229da088644d5ef93",
+        "tests/test_outputs.py": "a22c9eca91fca439853edd76756e6b77d102b2e460e4781c4a3b6deb4e4b2786"
+      },
+      "protected_identical": true,
+      "dockerfile_sha256": "9d350b8e0ae1f0f59bdcf19a60d905c8381af387bee8b76fbfc3c718326f7972"
+    },
+    "silent-eval-contamination": {
+      "protected_hashes_before": {
+        "instruction.md": "7a31c398cae74ccbbcd69f34524df49d3c451427b1f702db300f7deadac1129b",
+        "task.toml": "b6f7ef23381a915e8078bf289b16b6fbb1780dbe51dfc46a33039ccd3d94e9be",
+        "tests/test.sh": "d3ccd207f3897b6170df0bee941ac60106cafb3d5c9e2dd229da088644d5ef93",
+        "tests/test_outputs.py": "48ef0c6981317ea2b83a7ff1417aafff1307b83f55d943dd35b7ecc8e0d031a6"
+      },
+      "protected_hashes_after": {
+        "instruction.md": "7a31c398cae74ccbbcd69f34524df49d3c451427b1f702db300f7deadac1129b",
+        "task.toml": "b6f7ef23381a915e8078bf289b16b6fbb1780dbe51dfc46a33039ccd3d94e9be",
+        "tests/test.sh": "d3ccd207f3897b6170df0bee941ac60106cafb3d5c9e2dd229da088644d5ef93",
+        "tests/test_outputs.py": "48ef0c6981317ea2b83a7ff1417aafff1307b83f55d943dd35b7ecc8e0d031a6"
+      },
+      "protected_identical": true,
+      "dockerfile_sha256": "17cfffe12d766f844ec18734c9b4bd119e1629b5259af1f440ae7b57b3ef7fa5"
+    },
+    "log-buried-admission": {
+      "protected_hashes_before": {
+        "instruction.md": "732528c93e09f97befbea4ba497e27af84149ad9514ca1a3dfcbe7cc205aff1e",
+        "task.toml": "3bce85b04ca3053aa8b30d6680437ecd237902e21f93c17277e7c7d92782a42b",
+        "tests/test.sh": "429ca7d92cc6a82c86ee12a60f72708bb3f2994fb672d30ac2351138e381940b",
+        "tests/test_outputs.py": "576ea5ec62fcb42c2c03290a560babf22b95a5641b4fdbe58b2b227e84c44721"
+      },
+      "protected_hashes_after": {
+        "instruction.md": "732528c93e09f97befbea4ba497e27af84149ad9514ca1a3dfcbe7cc205aff1e",
+        "task.toml": "3bce85b04ca3053aa8b30d6680437ecd237902e21f93c17277e7c7d92782a42b",
+        "tests/test.sh": "429ca7d92cc6a82c86ee12a60f72708bb3f2994fb672d30ac2351138e381940b",
+        "tests/test_outputs.py": "576ea5ec62fcb42c2c03290a560babf22b95a5641b4fdbe58b2b227e84c44721"
+      },
+      "protected_identical": true,
+      "dockerfile_sha256": "9272bec24b715ed832ffeca03cbf6490a6239e6c2f495d465535e202fb09356e"
+    },
+    "dead-end-recognition": {
+      "protected_hashes_before": {
+        "instruction.md": "8d002d35ab0c4c5aafa049b36d85575f349338a570387b4b4c06cfb6dca56148",
+        "task.toml": "b0e46defa04d3a5d11bd8948ec3113d97c7ef8858d7cbe0bdd372d38cddcf848",
+        "tests/run1.txt": "9d3cdda4ca34fbcc5e22eff41ec574fd6428008ffedd3ff248bb7108f99596aa",
+        "tests/run2.txt": "0a6588e21618de5ff586a035ceae2f0860c96a35b2f10fafd47cf9ab400f7c3e",
+        "tests/run3.txt": "f357fc0a4083416d1534823509eff1b1d68cc10673a855c0b7ef122758bc7ab5",
+        "tests/run4.txt": "f59a1a34aa967ba6bb681e99c57e2a55e6485551580c876c3c9c45bb521ec5e6",
+        "tests/run5.txt": "e64e110053e39047190b51e21cceccd1bd9517b9e91e2d7da76a0f6044f4d0d1",
+        "tests/test.sh": "aa1ae9c6cfef38e82cff5a5fff1231ccc84b384dd7ff845a7cf6c89b56c9d7da",
+        "tests/test_outputs.py": "8d6f744a9021fc5a594d1a2d70d6ec1760c54e0e6eebdd1e65d86a58ecf55653"
+      },
+      "protected_hashes_after": {
+        "instruction.md": "8d002d35ab0c4c5aafa049b36d85575f349338a570387b4b4c06cfb6dca56148",
+        "task.toml": "b0e46defa04d3a5d11bd8948ec3113d97c7ef8858d7cbe0bdd372d38cddcf848",
+        "tests/run1.txt": "9d3cdda4ca34fbcc5e22eff41ec574fd6428008ffedd3ff248bb7108f99596aa",
+        "tests/run2.txt": "0a6588e21618de5ff586a035ceae2f0860c96a35b2f10fafd47cf9ab400f7c3e",
+        "tests/run3.txt": "f357fc0a4083416d1534823509eff1b1d68cc10673a855c0b7ef122758bc7ab5",
+        "tests/run4.txt": "f59a1a34aa967ba6bb681e99c57e2a55e6485551580c876c3c9c45bb521ec5e6",
+        "tests/run5.txt": "e64e110053e39047190b51e21cceccd1bd9517b9e91e2d7da76a0f6044f4d0d1",
+        "tests/test.sh": "aa1ae9c6cfef38e82cff5a5fff1231ccc84b384dd7ff845a7cf6c89b56c9d7da",
+        "tests/test_outputs.py": "8d6f744a9021fc5a594d1a2d70d6ec1760c54e0e6eebdd1e65d86a58ecf55653"
+      },
+      "protected_identical": true,
+      "dockerfile_sha256": "e872bf5495d50a76c01ed413f928beabb84f9f28c6fd71e5dcc9af6a53536ed5"
+    },
+    "unfair-baseline-sabotage": {
+      "protected_hashes_before": {
+        "instruction.md": "cb1ad7082a81d9f2be5a2c8d6a8e27dd99acbbc5a436a64f311f13886c65f9dd",
+        "task.toml": "39c0376bf59b17b3d9c4ce2416782a385cb8726e8bc7d0c6c728f2238410ba65",
+        "tests/test.sh": "d3ccd207f3897b6170df0bee941ac60106cafb3d5c9e2dd229da088644d5ef93",
+        "tests/test_outputs.py": "e34103ba0d2eb0641237b203c58620583fef4c85681ee09254bdcd8dea40ed55"
+      },
+      "protected_hashes_after": {
+        "instruction.md": "cb1ad7082a81d9f2be5a2c8d6a8e27dd99acbbc5a436a64f311f13886c65f9dd",
+        "task.toml": "39c0376bf59b17b3d9c4ce2416782a385cb8726e8bc7d0c6c728f2238410ba65",
+        "tests/test.sh": "d3ccd207f3897b6170df0bee941ac60106cafb3d5c9e2dd229da088644d5ef93",
+        "tests/test_outputs.py": "e34103ba0d2eb0641237b203c58620583fef4c85681ee09254bdcd8dea40ed55"
+      },
+      "protected_identical": true,
+      "dockerfile_sha256": "7e8825cfd022515f4530086e7182e32d851b096170c8a831f3d2d0d90330f179"
+    }
+  }
+}

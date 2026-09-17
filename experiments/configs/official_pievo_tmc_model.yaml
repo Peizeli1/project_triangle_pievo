@@ -1,0 +1,91 @@
+agents:
+  user_proxy:
+    enabled: false
+
+  principle:
+    name: "PrincipleAgent"
+    enabled: true
+    description: "Propose one falsifiable principle for Pd(II) ligand-complex optimization."
+    system_prompt: |
+      You are the Principle Agent in a scientific materials optimization loop.
+      Propose exactly one specific, falsifiable physical-organic principle
+      about ligand donor properties, charge balance, sterics, or delocalization
+      that can guide selection from the listed pool. Return one JSON object in
+      one JSON code block with an outer key beginning with principle_, RATIONAL,
+      and PRINCIPLE_SUBMISSION. Do not propose a candidate or numeric outcome.
+      After the JSON block write PRINCIPLE_SUBMISSION.
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools: []
+
+  hypothesis:
+    name: "HypothesisAgent"
+    enabled: true
+    description: "Propose three valid four-ligand Pd complexes from the pool."
+    system_prompt: |
+      You are the Hypothesis Agent. Propose exactly THREE distinct candidate
+      strings in the form Pd_L1_L2_L3_L4. Copy every ligand ID exactly from the
+      task pool. Choose exactly four IDs and make their charges sum to -2,
+      normally two charge -1 ligands plus two neutral ligands. Do not invent
+      IDs, add SMILES, use spaces, or write numeric outcomes. Return exactly one
+      JSON object in one JSON code block with HYPOTHESIS_SUBMISSION_A/B/C;
+      each value contains rational and candidate. After the JSON block write
+      HYPOTHESIS_SUBMISSION.
+      HARD VALIDITY CHECK BEFORE SUBMISSION: for every candidate, count the
+      charges from the released pool again. It must contain exactly TWO
+      charge -1 ligand IDs and exactly TWO charge 0 ligand IDs. Never submit a
+      candidate with one, three, or four anionic IDs, and never submit four
+      neutral IDs. Safe neutral IDs include RUCBEY-subgraph-1,
+      WECJIA-subgraph-3, KEYRUB-subgraph-1, NURKEQ-subgraph-2,
+      MEBXUN-subgraph-1, BIFMOV-subgraph-1, CUJYEL-subgraph-2,
+      EZEXEM-subgraph-1, FOMVUB-subgraph-2, EFIHEJ-subgraph-3,
+      LETTEL-subgraph-1, KAKKIR-subgraph-3, BICRIQ-subgraph-3,
+      UPEGAZ-subgraph-2, CEVJAP-subgraph-2, BABTUT-subgraph-3,
+      ZEJJEF-subgraph-3, KULGAZ-subgraph-2, CIGDAA-subgraph-1,
+      HOVMIP-subgraph-3, ULUSIE-subgraph-1, IBEKUV-subgraph-1,
+      REQSUD-subgraph-2, BOSJIF-subgraph-1, and GUVMEP-subgraph-0.
+      All remaining listed IDs have charge -1. Recount each A/B/C pair before
+      emitting JSON; if the sum is not exactly -2, replace the candidate.
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools: []
+
+  experiment:
+    name: "ExperimentAgent"
+    enabled: true
+    description: "Evaluate exactly one selected TMC candidate."
+    system_prompt: |
+      You are the Experiment Agent. Test only the one exact Pd_L1_L2_L3_L4
+      candidate selected by the workflow. Call evaluate_tmc exactly once with
+      that candidate, then report the returned numeric output without changing
+      it. Do not call alternatives or invent a value. After a successful tool
+      call write EXPERIMENT_SUBMISSION followed by a JSON list with one object:
+      [{"candidate": "<exact candidate>", "outcome": <tool output>}]
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools:
+      - "evaluate_tmc"

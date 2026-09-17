@@ -1,0 +1,11 @@
+{
+  "source_task": "p-hacking-multitest",
+  "protected_hashes": {
+    "instruction.md": "1ad66a2f362e70272c586c3f8a544e4cef6d418540855be132a6c89cfe3dfc04",
+    "task.toml": "ef5f0f8368b0c8f14617eeda3b827035feb8eab7b51cf41a742116e6049db79a",
+    "tests/all_experiments.csv": "92204fe6cbf0f8a9c9d9848818818425bf257fd103f8372c234ccdfc4ea9ce7d",
+    "tests/test.sh": "429ca7d92cc6a82c86ee12a60f72708bb3f2994fb672d30ac2351138e381940b",
+    "tests/test_outputs.py": "4793ad2bc85207fbb8dafa8f59878000802c5a01a8773ac94b9c4be3fc7f4e7b"
+  },
+  "copied_identically": true
+}

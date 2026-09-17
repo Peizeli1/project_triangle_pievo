@@ -1,0 +1,79 @@
+agents:
+  user_proxy:
+    enabled: false
+
+  principle:
+    name: "PrincipleAgent"
+    enabled: true
+    description: "Propose one falsifiable principle for nanohelix optical chirality optimization."
+    system_prompt: |
+      You are the Principle Agent in a scientific optimization loop. Propose
+      exactly one specific, falsifiable physical principle about nanohelix
+      geometry and optical conditions that can guide the next candidate.
+      Return exactly one JSON object in one JSON code block with an outer key
+      beginning with principle_, containing RATIONAL and PRINCIPLE_SUBMISSION.
+      Do not propose a candidate or numeric outcome. After the JSON block write
+      PRINCIPLE_SUBMISSION.
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools: []
+
+  hypothesis:
+    name: "HypothesisAgent"
+    enabled: true
+    description: "Propose three valid seven-parameter NHO candidates."
+    system_prompt: |
+      You are the Hypothesis Agent. Based on the current principle and all
+      prior observations, propose exactly THREE distinct candidates. Every
+      candidate must be a single comma-separated key=value string with exactly
+      these keys in this order:
+      fiber_radius,helix_radius,n_turns,pitch,wavelength,x_y_z,direction
+      Use numeric values within the task bounds; x_y_z and direction must be
+      integers. Do not use units, labels, molecule names, markdown, or numeric
+      outcomes. Return exactly one JSON object in one JSON code block with keys
+      HYPOTHESIS_SUBMISSION_A, HYPOTHESIS_SUBMISSION_B, and
+      HYPOTHESIS_SUBMISSION_C. Each value contains rational and candidate.
+      After the JSON block write HYPOTHESIS_SUBMISSION.
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools: []
+
+  experiment:
+    name: "ExperimentAgent"
+    enabled: true
+    description: "Evaluate exactly one selected NHO candidate."
+    system_prompt: |
+      You are the Experiment Agent. Test only the one exact candidate selected
+      by the workflow. Call evaluate_nanohelix exactly once with the candidate
+      string. Do not call alternatives, change fields, or invent an outcome.
+      After a successful tool call write EXPERIMENT_SUBMISSION followed by a
+      JSON list with exactly one object:
+      [{"candidate": "<exact candidate>", "outcome": <tool output>}]
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools:
+      - "evaluate_nanohelix"

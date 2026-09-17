@@ -1,0 +1,103 @@
+agents:
+  user_proxy:
+    enabled: false
+
+  principle:
+    enabled: true
+    description: "Propose one falsifiable chemical principle for molecular bio-activity search."
+    system_prompt: |
+      You are the Principle Agent in a scientific molecular optimization loop.
+      Propose exactly one specific, falsifiable chemistry principle that can
+      guide selection of a valid SMILES molecule for high pChEMBL prediction.
+      Keep it compatible with ordinary neutral drug-like organic molecules.
+      Return exactly one JSON object in one JSON code block with this exact
+      nested structure (RATIONAL must be an object, not a string):
+      {
+        "principle_molecular_rule": {
+          "RATIONAL": {
+            "major premise": "...",
+            "minor premises": ["...", "..."]
+          },
+          "PRINCIPLE_SUBMISSION": "..."
+        }
+      }
+      Do not claim that an experiment was performed and do not write an
+      outcome. Do not add any other top-level keys.
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools: []
+
+  hypothesis:
+    enabled: true
+    description: "Propose three short, neutral, RDKit-valid one-line SMILES candidates."
+    system_prompt: |
+      You are the Hypothesis Agent. Based on the current principle and prior
+      observations, propose exactly THREE distinct, chemically valid, neutral
+      one-line SMILES candidates for the official ChEMBL35 surrogate.
+
+      Use a conservative validity checklist before returning each candidate:
+      (1) maximum 80 characters; (2) only ordinary neutral C, N, O, S, F, Cl,
+      or Br atoms; (3) no formal charges, isotope labels, stereochemical
+      slashes, dot-disconnected fragments, or percent ring labels; (4) copy a
+      complete validated ring scaffold exactly instead of counting ring digits
+      globally or rebuilding fused closures; (5) cover aromatic,
+      heteroaromatic, saturated macrocycle, fused-saturated, and bridged
+      families. Safe exact examples include
+      c1ccccc1, c1ccc2ccccc2c1, c1ccc2[nH]ccc2c1, c1ccc2ncccc2c1,
+      Cc1ccccc1, Oc1ccccc1, O=C(O)c1ccccc1, and
+      O=C(Nc1ccccc1)c1ccccc1, C1CCCCCCC1, C1CCCCCCCCCCC1,
+      C1CCC2CCCCC2C1, C1C2CC3CC1CC(C2)C3, C1CCC2(CC1)CCCCC2,
+      and O=C1CCCCCCCCCCC1. Prefer an exact validated example when uncertain.
+      You may modify a simple aromatic example with one neutral substituent,
+      but do not modify macrocycle/bridged ring closures or invent fused-ring
+      syntax.
+
+      Do not use molecule names, markdown labels, spaces outside strings,
+      conditions, or invented numeric outcomes. Return exactly one JSON object
+      in one JSON code block with keys HYPOTHESIS_SUBMISSION_A,
+      HYPOTHESIS_SUBMISSION_B, and HYPOTHESIS_SUBMISSION_C. Each value must
+      contain `rational` and `candidate`. After the JSON block write
+      HYPOTHESIS_SUBMISSION.
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools: []
+
+  experiment:
+    enabled: true
+    description: "Evaluate exactly one selected valid SMILES with the official ChEMBL35 surrogate."
+    system_prompt: |
+      You are the Experiment Agent. Test only the one exact SMILES candidate
+      selected by the workflow. Call evaluate_chembl exactly once with that
+      one-line SMILES string. Do not call the tool for alternatives, do not
+      change the string, and do not invent or round the returned number. After
+      a successful tool call, write EXPERIMENT_SUBMISSION followed by a JSON
+      list with exactly one object:
+      [{"candidate": "<exact SMILES>", "outcome": <exact tool output>}]
+    streaming: false
+    message_buffer_size: 10
+    api_config:
+      base_url: "https://zjuapi.com/v1"
+      model_name: "qwen3-235b-a22b-instruct-2507"
+      api_key: "${ZJU_TASK_API_KEY}"
+      is_reasoning: false
+      temperature: 0.6
+      max_tokens: 4096
+      json_output: false
+    tools:
+      - "evaluate_chembl"

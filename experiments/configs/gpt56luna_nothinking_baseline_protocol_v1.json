@@ -1,0 +1,22 @@
+{
+  "schema_version": "gpt56luna_nothinking_baseline_protocol.v1",
+  "track": "gpt56luna_nothinking_table1_baselines_v1",
+  "model": "gpt-5.6-luna",
+  "model_track": "gpt56luna_nothinking",
+  "base_url": "https://zjuapi.com/v1",
+  "reasoning_effort": "none",
+  "temperature": 0.6,
+  "max_tokens": 4096,
+  "top_p": 0.8,
+  "top_k": 20,
+  "presence_penalty": 1.5,
+  "repetition_penalty": 1.0,
+  "enable_thinking": false,
+  "context_messages": 10,
+  "primary_budget_per_cell": 24,
+  "seeds": [0, 1, 2],
+  "max_total_tokens_per_cell": 350000,
+  "evaluator": "released_local_pievo_piflow_evaluator",
+  "candidate_policy": "method-specific proposal logic with shared final parser and evaluator accounting",
+  "claim_boundary": "GPT-5.6-Luna no-thinking matched released-evaluator baseline comparison; not exact hidden paper leaderboard recovery or universal external SOTA."
+}

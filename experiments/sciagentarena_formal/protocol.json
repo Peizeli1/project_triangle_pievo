@@ -1,0 +1,87 @@
+{
+  "schema_version": "sciagentarena_drug_discovery_formal.v1",
+  "benchmark": {
+    "name": "SciAgentArena Drug Discovery",
+    "source": "https://github.com/HelloWorldLTY/SciAgentArena",
+    "commit": "9865bb0c261bd9a59ef23576805b268b458b59d2",
+    "task_count": 79,
+    "categories": {
+      "C1": 18,
+      "C2": 26,
+      "C3": 10,
+      "C4": 6,
+      "C5": 19
+    },
+    "official_scorers_unchanged": true,
+    "local_gpu_required": false
+  },
+  "model": {
+    "id": "qwen3-235b-a22b-instruct-2507",
+    "endpoint": "https://zjuapi.com/v1",
+    "temperature": 0.6,
+    "max_output_tokens": 8192,
+    "seeds": [0, 1, 2]
+  },
+  "fairness": {
+    "same_task_prompt": true,
+    "same_model": true,
+    "same_decoding": true,
+    "hidden_scorer_available_during_generation": false,
+    "ground_truth_available_during_generation": false,
+    "resume_without_overwriting_terminal_runs": true
+  },
+  "tables": {
+    "table6": {
+      "title": "Performance on SciAgentArena Drug Discovery Tasks",
+      "methods": [
+        "Claude Code",
+        "Codex CLI",
+        "AI-Researcher",
+        "ResearchHarness",
+        "Triage-PiEvo / Ours"
+      ],
+      "metrics": [
+        "Official Score",
+        "Target Attainment",
+        "Verified Score",
+        "Valid Runs",
+        "Critical Failure",
+        "Tokens / Task",
+        "Runtime / Task"
+      ]
+    },
+    "table7": {
+      "title": "Triage as a Plug-in across Autonomous Research Harnesses",
+      "harnesses": ["ResearchHarness", "AI-Researcher", "Claude Code"],
+      "variants": ["Base", "Self-Review", "Triage"],
+      "metrics": [
+        "Official Score",
+        "Verified Score",
+        "C5 False Admission",
+        "C5 Validation Accuracy",
+        "Tokens / Task",
+        "Runtime / Task"
+      ]
+    },
+    "table8": {
+      "title": "Ablation of Evidence Admission on SciAgentArena",
+      "variants": [
+        "Full Triage (k=2)",
+        "k=1",
+        "k=3",
+        "w/o held-out verification",
+        "w/o channel reliability",
+        "w/o backtracking",
+        "Same-source repeat = independent"
+      ],
+      "metrics": [
+        "C5 False Admission",
+        "C3 Optimization Success",
+        "Verified Score",
+        "Critical Failure",
+        "Verification Tokens",
+        "Runtime / Task"
+      ]
+    }
+  }
+}

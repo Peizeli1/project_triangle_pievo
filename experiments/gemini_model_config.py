@@ -1,0 +1,11 @@
+"""Single source of truth for the Gemini model used by the Lite experiment."""
+
+MODEL_ALIAS = "gemini-2.5-flash-lite-no-thinking"
+NATIVE_MODEL = "gemini-2.5-flash-lite"
+RUN_PREFIX = "gemini25flashlite_nothinking"
+TABLE1_TRACK = f"{RUN_PREFIX}_table1"
+SMOKE_TRACK = f"{RUN_PREFIX}_smoke"
+BASELINE_PROTOCOL_SCHEMA = f"{RUN_PREFIX}_baseline_protocol.v1"
+PIEVO_PROTOCOL_SCHEMA = f"{RUN_PREFIX}_pievo_radp_protocol.v1"
+RUN_MANIFEST_SCHEMA = f"{RUN_PREFIX}_table1_run_manifest.v1"
+REPORT_SCHEMA = f"{RUN_PREFIX}_table1_table2.v1"

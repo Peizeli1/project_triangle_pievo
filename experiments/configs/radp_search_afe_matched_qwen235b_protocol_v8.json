@@ -1,0 +1,265 @@
+{
+  "schema_version": "radp_search_afe_matched_qwen235b_protocol.v8",
+  "protocol_id": "radp_search_afe_qwen235b_v8",
+  "objective": "Compare RADP-Search-AFE with the strongest matched released PiEvo evaluator track on Qwen3-235B while keeping primary, verification, and claim boundaries explicit.",
+  "model": "qwen3-235b-a22b-instruct-2507",
+  "model_track": "matched_qwen235b_only",
+  "base_protocol": "experiments/configs/radp_search_afe_matched_qwen235b_protocol_v8.json",
+  "paper_protocol_source": "official_sources/PiEvo/assets/2602.06448v1.pdf",
+  "primary_budget": 24,
+  "seed_policy": {
+    "development": [0],
+    "formal": [0, 1, 2],
+    "formal_runs_are_fresh_after_freeze": true,
+    "development_seed0_is_not_formal": true
+  },
+  "algorithm": {
+    "radp_algorithm_id": "radp_search_afe_v8",
+    "radp_strategy": "afe_v8",
+    "radp_algorithm_ids_by_task": {
+      "NHO": "radp_search_afe_v8",
+      "MBO": "radp_search_afe_v8",
+      "SPO": "radp_search_afe_spo_v1",
+      "TMC": "radp_search_afe_v8"
+    },
+    "radp_strategies_by_task": {
+      "NHO": "afe_v8",
+      "MBO": "afe_v8",
+      "SPO": "afe_spo_v1",
+      "TMC": "afe_v8"
+    },
+    "pievo_algorithm_id": "pievo_matched_release_v1",
+    "candidate_space": "valid candidates accepted by the shared task validator",
+    "afe_pool": "task-specific outcome-blind structural streams; ChEMBL35 canonical_smiles for MBO and PiFlow public formula only for SPO"
+  },
+  "g1_fairness_protocol": {
+    "schema_version": "radp_search_afe_g1_fairness.v1",
+    "status": "zero_api_frozen_before_live_collection",
+    "strongest_pievo_reference": {
+      "arm_id": "strongest_pievo",
+      "method": "pievo_release",
+      "generator_id": "pievo_native_release_v1",
+      "formal_role": "reference_only",
+      "same_model_prompt_task_and_primary_budget": true
+    },
+    "zero_api_comparison_arms": [
+      {
+        "arm_id": "pievo_common_generator",
+        "method": "pievo",
+        "generator_id": "radp_common_generator_v1",
+        "algorithm_id": "pievo_matched_release_v1",
+        "formal_role": "generator_control"
+      },
+      {
+        "arm_id": "radp_common_generator",
+        "method": "radp",
+        "generator_id": "radp_common_generator_v1",
+        "algorithm_id": "radp_search_afe_v8",
+        "formal_role": "gate_control"
+      },
+      {
+        "arm_id": "radp_afe",
+        "method": "radp",
+        "generator_id": "radp_search_afe_v8",
+        "algorithm_id": "radp_search_afe_v8",
+        "formal_role": "treatment"
+      }
+    ],
+    "formal_primary_comparison": {
+      "arms": ["strongest_pievo", "radp_afe"],
+      "methods": ["pievo", "radp"],
+      "seeds": [0, 1, 2],
+      "primary_per_cell": 24,
+      "primary_total": 144,
+      "generator_difference_is_reported": true,
+      "common_generator_controls_required_before_claim": true
+    },
+    "common_generator": {
+      "path": "experiments/common_candidate_generator.py",
+      "generator_id": "radp_common_generator_v1",
+      "outcome_blind": true,
+      "uses_primary_labels": false,
+      "uses_verifier_values": false,
+      "uses_source_gate_decisions": false,
+      "uses_experimenter_reasoning": false,
+      "same_ordered_stream_for_common_arms": true,
+      "seed_input": "llm_seed",
+      "slot_input": "primary_slot",
+      "hash_bound_by_preflight": true
+    },
+    "shared_controls": {
+      "model": "qwen3-235b-a22b-instruct-2507",
+      "same_prompt_and_task_config": true,
+      "same_candidate_validator": true,
+      "same_primary_budget": true,
+      "candidate_space_same_for_common_arms": true,
+      "counterbalanced_method_order": {
+        "seed0": ["pievo_common_generator", "radp_common_generator"],
+        "seed1": ["radp_common_generator", "pievo_common_generator"],
+        "seed2": ["pievo_common_generator", "radp_common_generator"]
+      },
+      "fresh_output_directory_per_cell": true,
+      "no_retry_or_partial_splicing": true,
+      "no_test_label_or_observed_score_in_generator_context": true
+    },
+    "budget_accounting": {
+      "primary_evaluation_unit": "one accepted unique candidate sent to the released evaluator",
+      "verification_evaluation_unit": "one diagnostic repeat or independent/heldout verifier action",
+      "primary_budget_equal": true,
+      "verification_cost_recorded_separately": true,
+      "equal_total_action_budget_required_for_cost_sweep": true,
+      "mbo_formal_matrix": "2 methods x 3 seeds x 24 primary = 144 primary",
+      "verification_is_not_relabelled_as_primary": true,
+      "token_ceiling_per_formal_run": 350000,
+      "wall_clock_and_verification_cost_reported": true
+    },
+    "failure_action": "stop paid collection and retain the failed artifact"
+  },
+  "candidate_generation": {
+    "afe_strategy": "afe_v8: source-labelled outcome-blind initial priors are enforced for the first three role slots, then clean-history acquisition covers each AFE role with the full unlabeled structural pool before ranking generated and LLM proposals",
+    "broad_structural_stream": {
+      "reader": "canonical_smiles_only",
+      "scan_limit": 50000,
+      "descriptor_filter": "rdkit_finite; molecular_weight<=1800; heavy_atoms<=150; rotatable_bonds<=50",
+      "selection": "full_pool_descriptor_stratified_stream_with_special_structure_coverage_over_50000_rows_v8",
+      "single_fragment_only": false,
+      "charged_candidates_excluded": false,
+      "special_structure_coverage_per_stream": true,
+      "seed_changes_within_complete_pool": true
+    },
+    "roles": ["best_region_exploitation", "frontier_expansion", "mechanism_discriminating_probe"],
+    "primary_history_only": true,
+    "verifier_values_used": false,
+    "source_gate_values_used": false,
+    "hidden_labels_used": false,
+    "pool_reader": "official_sources/PiEvo_radp_qwen235b/pievo/radp/wide_candidate.py",
+    "pool_reader_reads": ["canonical_smiles"],
+    "pool_reader_does_not_read": ["pchembl_max", "pchembl_min", "pchembl_value_mean_BF", "activity_count"]
+  },
+  "verification": {
+    "released_surrogate_repeat": true,
+    "repeat_is_independent": false,
+    "independent_heldout_provider": false,
+    "reliability_claim": "blocked until an independently audited held-out provider passes",
+    "failed_verifier_attempts_are_excluded": true
+  },
+  "official_repetition_policy": {
+    "tasks": ["NHO", "MBO", "SPO", "TMC"],
+    "pievo_tasks": ["NHO", "MBO", "SPO", "TMC"],
+    "runs_per_method": 3,
+    "pievo_independent_runs": 3,
+    "formal_comparison_scope": "matched released evaluator Qwen3-235B, not exact paper Qwen3-32B leaderboard",
+    "formal_primary_per_run": 24,
+    "official_primary_per_run": 24,
+    "formal_primary_total": 576,
+    "official_primary_per_method": 288,
+    "official_primary_per_method_task": 72,
+    "mbo_formal_primary_total": 144,
+    "four_task_primary_total_after_mbo_pass": 576,
+    "external_full_runs_require_four_task_superiority": true
+  },
+  "statistical_policy": {
+    "primary_endpoint": "mean_task_normalized_sq",
+    "paired_unit": "task_seed",
+    "paired_cell_count": 12,
+    "paired_cell_count_after_four_task_phase": 12,
+    "difference": "radp_minus_matched_pievo",
+    "bootstrap": {"repetitions": 10000, "interval": "percentile_95", "seed": 0},
+    "permutation": "exact_paired_sign_permutation_two_sided",
+    "strict_superiority_requires": ["paired_mean_difference_gt_zero", "paired_bootstrap_95_lower_gt_zero"],
+    "no_post_hoc_endpoint_or_cell_deletion": true
+  },
+  "staged_execution": {
+    "g0_and_zero_api_preflight_before_paid_collection": true,
+    "evaluator_g0_must_precede_matched_formal": true,
+    "official_phase_must_precede_external_full": true,
+    "mbo_formal_before_four_task_formal": true,
+    "four_task_formal_before_external_full": true,
+    "external_protocol_frozen_before_official_gate": true,
+    "external_protocol_frozen_before_unlock": true,
+    "external_full_run_requires_gate_artifact": true,
+    "gate_failure_interpretation": "external_not_evaluated_due_to_preregistered_stop_rule",
+    "failure_action": "stop current stage, preserve evidence, and rerun that stage in a fresh directory"
+  },
+  "execution_safety": {
+    "formal_runner_requires_preflight": true,
+    "formal_runner_requires_g0_preflight": true,
+    "matched_formal_requires_evaluator_g0": true,
+    "external_runner_requires_gate_decision_and_g0": true,
+    "formal_run_track": "matched_qwen235b",
+    "reconstruction_track": "matched_qwen235b_reconstruction",
+    "reconstruction_can_never_enter_formal_matrix": true,
+    "reconstruction_can_never_enter_official_matrix": true,
+    "fresh_output_directory_required": true,
+    "primary_budget_exact": 24,
+    "llm_seed_must_be_applied": true,
+    "offline_runtime_preflight_before_api_key": true,
+    "no_partial_or_retry_splicing": true,
+    "max_total_tokens_per_formal_run": 350000
+  },
+  "minimal_controlled_api_screen": {
+    "purpose": "bounded paired MBO integration screen for the active v8 implementation",
+    "prerequisite": "python3 experiments/minimal_radp_offline_gate.py --seeds 32 exits 0",
+    "offline_prerequisite_passed": true,
+    "paired_runner": "experiments/run_official_mbo_development_screen.sh",
+    "paired_runner_dry_run": "PIEVO_DRY_RUN=1 experiments/run_official_mbo_development_screen.sh",
+    "paired_runner_ready": true,
+    "controlled_source_confusion_runner_ready": true,
+    "execution_ready": true,
+    "task": "official_mbo_with_frozen_source_confusion_diagnostic",
+    "methods": ["source_blind_pievo", "radp_active"],
+    "corruption_schedule": {
+      "mode": "one_shot_spike",
+      "calls": [2, 3],
+      "offset": 2.0,
+      "source_gate_score_ge": 0.0,
+      "rationale": "The bounded screen exercises the source-gate wiring; it is not an independent verifier."
+    },
+    "candidate_prefilter": {
+      "enabled": true,
+      "scope": "SPO, MBO, and TMC; shared task validator before evaluator turns",
+      "validator": "shared candidate_validation.validate_candidate",
+      "max_unique_rejections": 12,
+      "max_consecutive_empty_pools": 2,
+      "invalid_proposals_remain_audited": true,
+      "canonical_duplicates_remain_audited": true,
+      "syntax_feedback_enabled": true,
+      "syntax_feedback_limit": 6,
+      "validated_scaffold_count": 14,
+      "evaluator_calls_consumed_by_rejections": 0,
+      "afe_controller_audit": "radp_afe_proposal_audit.jsonl",
+      "afe_controller_rejections_enter_evaluator_action_ledger": false,
+      "afe_controller_rejections_remain_audited": true
+    },
+    "candidate_generation_control": {
+      "strategy_version": "afe_v8",
+      "strategy_status": "active_unique_version",
+      "strategy_roles": ["best_region_exploitation", "frontier_expansion", "mechanism_discriminating_probe"],
+      "radp_accepted_principle_only": true,
+      "radp_bootstrap_prior_context": true,
+      "radp_bootstrap_prior_enforced": true,
+      "radp_neutral_reward_guided": true,
+      "radp_guidance_only_context": true,
+      "radp_neutral_reward_source": "reconciled_local_history_only",
+      "retained_exact_candidate_reuse_forbidden": true,
+      "broad_structural_stream": "descriptor_stratified_special_coverage_portfolio_v8",
+      "zero_api_validation_required_before_paid_rerun": true,
+      "claim_boundary": "This control tests integration and candidate-generation confounding; it does not establish SOTA."
+    }
+  },
+  "gate_levels": {
+    "G0": "released evaluator, task constraints, runner, and provenance are available",
+    "G1": "common generator replay, validator identity, seed proof, and ledgers pass",
+    "G2_MBO": "144-primary MBO matrix is complete and statistics are computed without peeking",
+    "G3_FOUR_TASK": "576-primary four-task matrix passes paired SQ/AUOC/reliability policy",
+    "G4_EXTERNAL": "external benchmarks unlock only after G3; exact Qwen3-32B claim remains separate"
+  },
+  "claim_boundary": {
+    "current": "AFE v8 implementation and zero-API protocol only",
+    "old_screen": "controlled released-surrogate source-confusion diagnostic, retained separately",
+    "matched_formal": "not claimable until fresh 144-primary MBO evidence is complete",
+    "independent_reliability": "not claimable; current verifier is a deterministic released-surrogate repeat",
+    "exact_paper_leaderboard": "locked without Qwen3-32B and exact hidden assets",
+    "external_sota": "locked until the four-task gate passes"
+  }
+}

@@ -1,0 +1,35 @@
+task: |
+  Molecular Bio-activity Optimization (MBO)
+
+  Find valid molecular structures represented by one exact SMILES string and
+  maximize the pChEMBL-like bio-activity prediction returned by the official
+  PiEvo/PiFlow ChEMBL35 GNN surrogate. Higher values are better. The SMILES
+  passed to the experiment tool must be a single line and must not include a
+  molecule name, explanation, conditions, or a changed value.
+
+  The official paper describes a 50,000-molecule random ChEMBL35 sample for
+  surrogate development. The local provenance file is a deterministic seed-0
+  reconstruction from the official ChEMBL35 SQLite release because the paper
+  does not publish the hidden row IDs or sampling seed. The evaluator for this
+  run is the released official surrogate; the search input remains an open
+  valid-SMILES space, matching the paper's molecular-search formulation.
+
+  [Objective]
+    Maximize the observed official surrogate output and approach the MBO
+    reference value mu_ref=6.5. Record only values returned by the tool.
+
+  [Provenance]
+    Official ChEMBL35 seed-0 reconstruction:
+    /Users/michael/Documents/ai4ai/experiments/results/official_chembl35_pool_seed0/chembl35_pool_seed0.jsonl
+
+environment:
+  UTIL_LLM_CONFIG_BASE_URL: "https://zjuapi.com/v1"
+  UTIL_LLM_CONFIG_NAME: "qwen3-235b-a22b-instruct-2507"
+  UTIL_LLM_CONFIG_API_KEY: "${ZJU_TASK_API_KEY}"
+  UTIL_LLM_CONFIG_TEMPERATURE: "0.6"
+  UTIL_LLM_CONFIG_MAX_TOKENS: "4096"
+  PIEVO_CHEMBL_MODEL_PATH: "${PIEVO_CHEMBL_MODEL_PATH:-}"
+  PIEVO_CHEMBL_POOL_PATH: "/Users/michael/Documents/ai4ai/experiments/results/official_chembl35_pool_seed0/chembl35_pool_seed0.jsonl"
+  PIEVO_MAX_PRIMARY_EVALS: "${PIEVO_MAX_PRIMARY_EVALS:-24}"
+  PIEVO_SEED: "${PIEVO_SEED:-0}"
+  PIEVO_DISABLE_PLOTS: "${PIEVO_DISABLE_PLOTS:-0}"
